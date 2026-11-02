@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>体育生命树 · 3D 模拟演示</title>
+  <title>生活与体育 · 共同生命树模拟演示</title>
   <link rel="stylesheet" href="life-tree-3d.css">
   <style>
     * { box-sizing: border-box; }
@@ -14,39 +14,56 @@
     a { color: #386447; }
     .badge { display: inline-block; padding: 5px 10px; border-radius: 16px; background: #e6ddeb; color: #673675; font-size: 12px; }
     .three-d-card { margin-top: 16px; }
+    .demo-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+    .demo-filters button { border: 1px solid #cddbd0; background: #fff; color: #386447; border-radius: 6px; padding: 10px 12px; cursor: pointer; font: inherit; }
+    .demo-filters button[aria-pressed="true"] { background: #386447; color: white; }
+    .demo-filters button:focus-visible { outline: 2px solid #809786; outline-offset: 3px; }
     @media(max-width: 620px) { body { padding: 12px; } h1 { font-size: 21px; } }
   </style>
 </head>
 <body>
   <main>
     <a href="index.html">← 返回体育经历问卷</a>
-    <h1>体育生命树 · 3D 模拟演示</h1>
+    <h1>生活与体育 · 共同生命树</h1>
     <span class="badge">模拟经历，仅供展示，不是研究数据</span>
-    <p>采用博导原版三维查看器，展示比赛获奖与运动伤病两条模拟轨迹。本页不读取或修改问卷草稿。</p>
+    <p>采用博导原版三维查看器，将家庭支持、比赛获奖与运动伤病放在同一条时间线上。本页不读取或修改问卷草稿。</p>
     <section class="three-d-card" aria-label="体育经历三维演示">
-      <h3>比赛、训练与成长的轨迹</h3>
+      <h3>同一棵树，查看不同生活领域</h3>
       <p>拖动旋转、滚轮或双指缩放；点击轨迹按钮查看经历与情境。</p>
+      <div class="demo-filters" role="group" aria-label="生命树范围"><button type="button" data-filter="all" aria-pressed="true">全部经历</button><button type="button" data-filter="general" aria-pressed="false">一般生活（非体育）</button><button type="button" data-filter="sports" aria-pressed="false">体育相关</button></div>
       <div id="tree"></div>
     </section>
   </main>
   <script src="life-tree.js"></script>
+  <script src="life-history-model.js"></script>
   <script src="life-tree-3d.js"></script>
   <script>
     const events = [
+      { id: 'demo-family', label: '升学适应期得到家人的关键支持（模拟）', domain: '家庭与生活', domains: ['家庭','人际','生活转变'], source_scope: 'general', source_scopes: ['general'], source_catalog_ids: ['life_family_support'], sports_relation: 'none', valence: 1,
+        trajectory_version: 3, trajectory_age_now: 20, age_start: 18, age_end: 20,
+        r_then: .6, r_now: .75, centrality: .8, now_salience: .75,
+        path_ar: [[18,.6],[18.5,.72],[19,.85],[19.5,.8],[20,.75]] },
       { id: 'demo-award', label: '在体育比赛中获得奖项（模拟）', domain: '比赛、选拔与机会', valence: 1,
+        domains: ['体育','个人成长'], source_scope: 'sports', source_scopes: ['sports'], source_catalog_ids: ['award'], sports_relation: 'competition',
         trajectory_version: 3, trajectory_age_now: 20, age_start: 15, age_end: 20,
         r_then: .82, r_now: .55, centrality: .65, now_salience: .55,
         path_ar: [[15,.82],[16,.7],[17,.48],[18,.58],[19,.62],[20,.55]] },
       { id: 'demo-injury', label: '伤病打断训练后逐步康复（模拟）', domain: '训练、身体与学业', valence: -1,
+        domains: ['体育','健康'], source_scope: 'sports', source_scopes: ['sports'], source_catalog_ids: ['injury'], sports_relation: 'training',
         trajectory_version: 3, trajectory_age_now: 20, age_start: 17, age_end: 20,
         r_then: .8, r_now: .18, centrality: .45, now_salience: .18,
         path_ar: [[17,-.8],[17.5,-.9],[18,-.68],[18.5,-.4],[19,-.28],[20,-.18]] }
     ];
     const details = {
+      'demo-family': { where: '家庭或宿舍', who: ['家人'], why: '家人的理解和支持', how: '逐渐适应大学生活', closeness: .9 },
       'demo-award': { where: '学校比赛场馆', who: ['教练','队友'], why: '自己的努力与团队支持', how: '持续训练并得到鼓励', closeness: .85 },
       'demo-injury': { where: '专项训练场', who: ['教练','队友','家人'], why: '运动伤病', how: '获得支持并逐步康复', closeness: .75 }
     };
     LifeTree3D.render({ host: document.getElementById('tree'), events, details, age: 20 });
+    document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{
+      document.querySelectorAll('[data-filter]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));
+      LifeTree3D.render({host:document.getElementById('tree'),events,details,age:20,filter:button.dataset.filter});
+    }));
   </script>
 </body>
 </html>

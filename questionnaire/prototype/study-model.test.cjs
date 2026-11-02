@@ -7,7 +7,7 @@ for (const [training,competition,group] of [[true,true,'training_and_competition
 assert.equal(Study.participationGroup({training_history:false}),'unknown');
 assert.equal(Study.exposure({training_history:false,competition_history:false,award_history:true}).award_history,false);
 assert.equal(Study.exposure({training_history:true,competition_history:true}).award_history,null);
-assert.equal(Study.canDraw({training_history:false,competition_history:false},[{id:'old'}]),false);
+assert.equal(Study.canDraw({training_history:false,competition_history:false},[{id:'life-event'}]),true);
 assert.equal(Study.canDraw({training_history:true,competition_history:false},[]),false);
 assert.equal(Study.canDraw({training_history:true,competition_history:false},[{id:'new'}]),true);
 const catalog = require('./event-catalog.js');

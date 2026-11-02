@@ -3,7 +3,7 @@
   // Transport-only adapter. Scientific fields stay in the questionnaire.
   function payloadFor(events, details, age) {
     return {
-      age_now: age, tool_version: 'sports-life-tree-prototype-v0.6',
+      age_now: age, tool_version: 'sports-life-tree-prototype-v0.7',
       events: events.filter(e => root.LifeTree.isComplete(e, age)).map(e => {
         const d = details[e.id] || {};
         return { ...e, event_id: e.id, item_key: e.label,
@@ -18,12 +18,13 @@
   }
   let stopPrevious = () => {};
   function dispose() { stopPrevious(); stopPrevious = () => {}; }
-  function render({ host, events, details = {}, age = 20 }) {
+  function render({ host, events, details = {}, age = 20, filter = 'all' }) {
     dispose();
-    const payload = payloadFor(events, details, age);
+    const filtered = root.LifeHistory ? events.filter(e => root.LifeHistory.matchesFilter(e, filter)) : events;
+    const payload = payloadFor(filtered, details, age);
     host.replaceChildren();
     if (!payload.events.length) {
-      host.textContent = '完成有效的生命树轨迹后，这里会显示 3D 结果。';
+      host.textContent = '当前范围没有已完成的轨迹，可切换“全部”或返回完成绘图。';
       return;
     }
     const iframe = document.createElement('iframe');

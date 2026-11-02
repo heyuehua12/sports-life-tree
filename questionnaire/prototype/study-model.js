@@ -13,7 +13,8 @@
       award_source: profile.competition_history === false ? 'structural_zero_no_competition'
         : profile.competition_history === true && typeof profile.award_history === 'boolean' ? 'self_report' : 'unanswered' };
   }
-  function canDraw(profile, events) { return participationGroup(profile) !== 'neither' && events.length > 0; }
+  // General life histories apply to everyone, including students without sports exposure.
+  function canDraw(profile, events) { return events.length > 0; }
   const api = { participationGroup, exposure, canDraw };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StudyModel = api;
