@@ -11,6 +11,7 @@
     "Annotation text escaping",
     "Explicit zero radius handling",
     "Canonical F0–F20 mappings with missing values preserved",
+    "Additional in-scene mapping glyphs, projected callouts, legend and visibility controls",
     "SVGRenderer compatibility fallback with original Three.js geometry",
     "Fit original camera orientation to viewport bounds"
   ]

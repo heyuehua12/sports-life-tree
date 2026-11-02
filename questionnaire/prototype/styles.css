@@ -134,6 +134,10 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 .detail-card h3 { margin: 0 0 14px; font-size: 1rem; }
 .detail-card .field { margin-top: 15px; }
 .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.detail-choices { min-width: 0; padding: 0; border: 0; margin-inline: 0; }
+.detail-choices legend { padding: 0; margin-bottom: 10px; color: var(--ink); font-size: .88rem; font-weight: 650; }
+.detail-option { padding: 10px 14px; line-height: 1.5; max-width: 100%; }
+.detail-option > span { overflow-wrap: anywhere; }
 .chip { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 7px; padding: 9px 11px; }
 .chip.is-selected { color: #fff; background: var(--ink); border-color: var(--ink); }
 .scale-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

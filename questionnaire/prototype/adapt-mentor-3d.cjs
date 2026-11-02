@@ -30,6 +30,18 @@ replace('</head>', `<style>
   body.embedded #ui { max-height: 150px; }
   body.embedded #anno { top: 150px; max-height: calc(100vh - 210px); }
   #err { color: #b8c6bf; }
+  .scene-mapping-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; font-family: system-ui, sans-serif; }
+  .scene-mapping-toolbar { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto; width: fit-content; }
+  .scene-mapping-toolbar button { min-height: 36px; padding: 7px 10px; border: 1px solid #55697b; border-radius: 6px; color: #edf2f4; background: #18232e; font: 12px/1.3 system-ui,sans-serif; cursor: pointer; }
+  .scene-mapping-toolbar button[aria-pressed="true"] { border-color: #92b3a1; background: #263b35; }
+  .scene-mapping-toolbar button:focus-visible { outline: 2px solid #d9e9df; outline-offset: 2px; }
+  .scene-mapping-toolbar button:disabled { opacity: .5; cursor: default; }
+  .scene-mapping-status { position: absolute; top: 54px; left: 10px; font-size: 11px; color: #d1dbe1; background: #0f1218cc; max-width: calc(100% - 20px); }
+  .scene-mapping-legend { position: absolute; bottom: 8px; left: 8px; right: 8px; padding: 8px 10px; color: #d7e2e8; background: #16212dea; border: 1px solid #344453; border-radius: 7px; font-size: 11px; line-height: 1.8; }
+  .scene-mapping-wires { position: absolute; width: 100%; height: 100%; inset: 0; overflow: hidden; }
+  .scene-mapping-wires path { fill: none; stroke-width: 1; opacity: .7; }
+  .scene-mapping-callout { position: absolute; top: 0; left: 0; padding: 5px 7px; background: #16202eee; border: 1px solid; border-radius: 5px; color: #f0f4f6; font-size: 11px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .scene-mapping-callout[hidden], .scene-mapping-labels[hidden], .scene-mapping-legend[hidden] { display: none; }
   @media (max-width: 720px) {
     body.nrlab-viz #ui { inset: auto; max-height: 190px; }
     body.nrlab-viz #c { inset: auto; }
@@ -43,6 +55,7 @@ replace('</head>', `<style>
 replace('<div id="c"></div>', '<div id="c" aria-label="可拖动旋转的生命树三维场景"></div><div id="loading" role="status">正在加载本地 3D 查看器…</div>');
 replace('import * as THREE from "three";', `import * as THREE from "three";
 import { SVGRenderer } from 'three/addons/renderers/SVGRenderer.js';
+import { createMappingLayer } from '../mapping-scene.mjs';
 const embedded = new URLSearchParams(location.search).has('embedded');
 if (embedded) document.body.classList.add('embedded');`);
 replace('const renderer = new THREE.WebGLRenderer({ antialias: true });', `let renderer;
@@ -60,6 +73,7 @@ replace('function resize() {', `function fitCameraToViewport() {
   if (!lastPayload || !treeGroup.children.length) return;
   treeGroup.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(treeGroup);
+  box.expandByObject(mappingLayer.group);
   if (box.isEmpty()) return;
   const center = box.getCenter(new THREE.Vector3());
   const direction = camera.position.clone().sub(controls.target).normalize();
@@ -81,6 +95,18 @@ replace('  renderer.setSize(w, h, false);', '  renderer.setSize(w, h, false);\n 
 replace('  applyCameraForView(trunkH);', '  applyCameraForView(trunkH);\n  fitCameraToViewport();');
 replace('  applyCameraForView(lastTrunkH);', '  applyCameraForView(lastTrunkH);\n  fitCameraToViewport();');
 replace('function clearTree() {', 'function clearTree() {\n  needsSoftwareRender = true;');
+replace('function clearTree() {\n  needsSoftwareRender = true;', 'function clearTree() {\n  mappingLayer.clear();\n  needsSoftwareRender = true;');
+replace('const raycaster = new THREE.Raycaster();', `const mappingLayer = createMappingLayer({THREE, scene, host, camera,
+  pointFor:polarToThree, registerPickable:tagPickable, invalidate:()=>{ needsSoftwareRender = true; },
+  onDetails:id=>{const ev=eventById.get(id);if(ev){showAnno(ev);annoEl.classList.add('open');}}});
+const raycaster = new THREE.Raycaster();`);
+replace('  events.forEach((ev) => addTrajectory(ev, ageLo, trunkAgeHi, trunkH, ageNow));', `  events.forEach((ev) => addTrajectory(ev, ageLo, trunkAgeHi, trunkH, ageNow));
+  const mappingEvents = events.map(ev=>({...ev,path_ar:Array.isArray(ev.path_ar)&&ev.path_ar.length>=2?ev.path_ar:synthPathAR(ev,ageNow)}));
+  mappingLayer.build(mappingEvents,deriveF,ageLo,trunkAgeHi,trunkH,ageNow);`);
+replace('  selectedId = eventId;\n  clearHighlightExtras();', '  selectedId = eventId;\n  mappingLayer.select(eventId);\n  clearHighlightExtras();');
+replace('  const hits = raycaster.intersectObjects(pickables, false);', `  if (e.target.closest('button')) return;
+  const visiblePickables = pickables.filter(obj=>{for(let p=obj;p;p=p.parent)if(!p.visible)return false;return true;});
+  const hits = raycaster.intersectObjects(visiblePickables, false);`);
 replace('  s.scale.set(1.2, 0.3, 1);', '  s.userData.text = text; s.userData.textFill = fill || "#c9d0dc";\n  s.scale.set(1.2, 0.3, 1);');
 replace('function loop() {', `function renderSoftwareScene() {
   const pose = [...camera.position.toArray(), ...camera.quaternion.toArray(), selectedId, showFloorProj, viewMode].join(',');
@@ -110,7 +136,7 @@ replace('function loop() {', `function renderSoftwareScene() {
   renderer.domElement.appendChild(labels);
 }
 function loop() {`);
-replace('  renderer.render(scene, camera);\n}\nloop();', '  if (softwareRenderer) renderSoftwareScene();\n  else renderer.render(scene, camera);\n}\nloop();');
+replace('  renderer.render(scene, camera);\n}\nloop();', '  mappingLayer.update();\n  if (softwareRenderer) renderSoftwareScene();\n  else renderer.render(scene, camera);\n}\nloop();');
 // Escape user-written event names before rendering the original annotations.
 replace('  return String(v);\n}\n\nfunction layerBlock', `  return String(v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
@@ -126,6 +152,7 @@ replace('F11–F12 · 构念5 客观常模','F11–F12 · 构念5 原版条目�
 replace('["F12 obj_w", F.F12_obj_w],','["F12 obj_w", F.F12_obj_w],\n      ["权重说明", ev.mapping ? "沿用博导条目参考；体育新增、自填或多条目合并不套用权重" : "原版模拟示例"],');
 replace('  const F = deriveF(ev);', `  if (embedded) parent.postMessage({type:'sports-life-tree-event-selected',id:ev.event_id},location.origin);
   const F = deriveF(ev);`);
+replace('  annoEl.classList.add("open");\n}\n\nfunction addDashedDrop', '  if (!ev.mapping) annoEl.classList.add("open");\n}\n\nfunction addDashedDrop');
 replace('document.getElementById("btn-four").click();\n</script>', `
 document.getElementById('loading').hidden = true;
 if (!embedded) {
@@ -162,6 +189,6 @@ fs.writeFileSync(path.join(outDir, 'SOURCE.json'), JSON.stringify({
   source_url: 'https://zhenghui.fun/tools/life-tree-viz', retrieved_date: '2026-11-02',
   source_sha256: crypto.createHash('sha256').update(fs.readFileSync(sourceFile)).digest('hex'),
   viewer: 'NRLab life-tree 3D v3.5', three_version: '0.160.0',
-  adaptation: ['Local dependencies', 'Same-origin questionnaire bridge and selection synchronization', 'Embedded layout', 'Annotation text escaping', 'Explicit zero radius handling', 'Canonical F0–F20 mappings with missing values preserved', 'SVGRenderer compatibility fallback with original Three.js geometry', 'Fit original camera orientation to viewport bounds'],
+  adaptation: ['Local dependencies', 'Same-origin questionnaire bridge and selection synchronization', 'Embedded layout', 'Annotation text escaping', 'Explicit zero radius handling', 'Canonical F0–F20 mappings with missing values preserved', 'Additional in-scene mapping glyphs, projected callouts, legend and visibility controls', 'SVGRenderer compatibility fallback with original Three.js geometry', 'Fit original camera orientation to viewport bounds'],
 }, null, 2));
 console.log('Adapted original NRLab 3D viewer to mentor-3d/index.html');

@@ -29,7 +29,7 @@
     <p>采用博导原版三维查看器，将家庭支持、比赛获奖与运动伤病放在同一条时间线上。本页不读取或修改问卷草稿。</p>
     <section class="three-d-card" aria-label="体育经历三维演示">
       <h3>同一棵树，查看不同生活领域</h3>
-      <p>拖动旋转、滚轮或双指缩放；点击轨迹按钮查看经历与情境。</p>
+      <p>拖动旋转、滚轮或双指缩放；映射符号直接画在树上。图内可开关标记、切换全部／选中经历，点击轨迹查看情境。</p>
       <div class="demo-filters" role="group" aria-label="生命树范围"><button type="button" data-filter="all" aria-pressed="true">全部经历</button><button type="button" data-filter="general" aria-pressed="false">一般生活（非体育）</button><button type="button" data-filter="sports" aria-pressed="false">体育相关</button></div>
       <div id="tree"></div>
     </section>
@@ -50,16 +50,17 @@
         trajectory_version: 3, trajectory_age_now: 20, age_start: 15, age_end: 20,
         r_then: .82, r_now: .55, centrality: .65, now_salience: .55,
         path_ar: [[15,.82],[16,.7],[17,.48],[18,.58],[19,.62],[20,.55]] },
-      { id: 'demo-injury', label: '伤病打断训练后逐步康复（模拟）', domain: '训练、身体与学业', valence: -1,
+      { id: 'demo-injury', label: '伤病打断训练后逐步康复并恢复信心（模拟）', domain: '训练、身体与学业', valence: -1,
         domains: ['体育','健康'], source_scope: 'sports', source_scopes: ['sports'], source_catalog_ids: ['injury'], sports_relation: 'training',
         trajectory_version: 3, trajectory_age_now: 20, age_start: 17, age_end: 20,
         r_then: .8, r_now: .18, centrality: .45, now_salience: .18,
-        path_ar: [[17,-.8],[17.5,-.9],[18,-.68],[18.5,-.4],[19,-.28],[20,-.18]] }
+        cross_axis: true, age_cross: 19.6, r_cross: .1,
+        path_ar: [[17,-.8],[17.5,-.9],[18,-.68],[18.5,-.4],[19,-.28],[19.3,-.08],[19.6,.1],[20,.18]] }
     ];
     const details = {
       'demo-family': { where: '家里', who: ['家人'], why: '别人帮助', how: '一直保持到现在', closeness: .9 },
       'demo-award': { where: '比赛场', where_basis:'学校', who: ['主教练','队友'], who_primary:'主教练', who_tie_basis:'老师', why: '自己的训练或表现', why_basis:'自己努力', how: '慢慢淡下去了', closeness: .85 },
-      'demo-injury': { where: '训练场', where_basis:'学校', who: ['主教练','队友','家人'], who_primary:'家人', why: '意外碰巧', how: '有人帮了我', closeness: .75 }
+      'demo-injury': { where: '训练场', where_basis:'学校', who: ['主教练','队友','家人'], who_primary:'家人', why: '意外碰巧', how: '后来变好了', closeness: .75 }
     };
     LifeTree3D.render({ host: document.getElementById('tree'), events, details, age: 20 });
     document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{

@@ -13,7 +13,7 @@ function mount(saved){
   return {dom,w,doc:w.document,errors,run:code=>vm.runInContext(code,context)};
 }
 function click(m,selector){const el=m.doc.querySelector(selector);assert.ok(el,'missing '+selector);el.click();}
-function change(m,selector,value){const el=m.doc.querySelector(selector);assert.ok(el,'missing '+selector);el.value=value;el.dispatchEvent(new m.w.Event('change',{bubbles:true}));}
+function change(m,selector,value){let el=m.doc.querySelector(selector);assert.ok(el,'missing '+selector);if(el.type==='radio'){el=[...m.doc.querySelectorAll(selector)].find(input=>input.value===value);assert.ok(el,'missing radio value '+value);el.click();return;}el.value=value;el.dispatchEvent(new m.w.Event('change',{bubbles:true}));}
 function input(m,selector,value){const el=m.doc.querySelector(selector);assert.ok(el);el.value=value;el.dispatchEvent(new m.w.Event('input',{bubbles:true}));}
 function background(m,training=false,competition=false){
   assert.equal(m.doc.querySelectorAll('[name="age"]').length,20);
@@ -102,8 +102,7 @@ click(c,'#nextBtn');assert.equal(c.run('state.step'),3);
 assert.equal(c.doc.querySelector('[data-detail-field$="|award_level"]'),null);
 change(c,'[data-detail-field$="|competition_outcome"]','awarded');
 assert.ok(c.doc.querySelector('[data-detail-field$="|award_level"]'));
-const awardSelect=c.doc.querySelector('[data-detail-field$="|award_level"]');
-change(c,'[data-detail-field$="|award_level"]',awardSelect.options[1].value);
+change(c,'[data-detail-field$="|award_level"]','校级');
 click(c,'#nextBtn');assert.equal(c.run('state.step'),4);
 assert.equal(c.w.buildPayload().events[0].details.competition_outcome,'awarded');
 assert.ok(c.w.buildPayload().events[0].details.award_level);assert.deepEqual(c.errors,[]);c.dom.window.close();
@@ -114,11 +113,14 @@ const mappedDraft={schema_version:require('./life-history-model.js').VERSION,ste
   events:[{id:'injury',label:'运动伤病（测试）',valence:-1,source_scope:'sports',source_catalog_ids:['injury'],domains:['体育','健康'],sports_relation:'training',relation_confirmed:true,trajectory_version:3,trajectory_age_now:20,path_ar:[[17,-.8],[18,-.4],[20,-.1]]},
     {id:'support',label:'得到支持 <img src=x onerror=alert(1)>',valence:1,source_scope:'sports',source_catalog_ids:['support'],domains:['体育','人际'],sports_relation:'training',relation_confirmed:true,trajectory_version:3,trajectory_age_now:20,path_ar:[[16,.4],[20,.8]]}]};
 const q=mount(mappedDraft);assert.equal(q.run('state.step'),3);
+assert.equal(q.doc.querySelector('.detail-list select'),null,'all context choices are expanded radios');
 click(q,'[data-chip="injury|where|训练场"]');change(q,'[data-detail-field="injury|where_basis"]','学校');
 click(q,'[data-chip="injury|who|主教练"]');input(q,'#rating-injury-closeness','.8');
 click(q,'[data-chip="injury|who|队友"]');assert.equal(q.doc.querySelector('#rating-injury-closeness'),null);
 change(q,'[data-detail-field="injury|who_primary"]','主教练');change(q,'[data-detail-field="injury|who_tie_basis"]','老师');input(q,'#rating-injury-closeness','0');
 click(q,'[data-chip="injury|why|教练反馈或决策"]');change(q,'[data-detail-field="injury|why_basis"]','别人行为');
+change(q,'[data-detail-field="injury|why_basis"]','');assert.equal(q.w.buildPayload().events[0].mapping.fields.F2_control_w,null);
+change(q,'[data-detail-field="injury|why_basis"]','别人行为');assert.equal(q.doc.querySelectorAll('[data-detail-field="injury|why_basis"]:checked').length,1);
 click(q,'[data-chip="injury|how|后来变得更糟"]');assert.equal(q.doc.querySelector('#injury-age_mid').textContent,'未作答');
 assert.equal(q.w.buildPayload().events[0].mapping.fields.F8_age_mid,null);
 input(q,'#rating-injury-age_mid','18');input(q,'#rating-injury-r_mid','0');

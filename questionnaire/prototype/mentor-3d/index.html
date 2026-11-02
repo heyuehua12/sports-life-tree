@@ -106,6 +106,18 @@
   body.embedded #ui { max-height: 150px; }
   body.embedded #anno { top: 150px; max-height: calc(100vh - 210px); }
   #err { color: #b8c6bf; }
+  .scene-mapping-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; font-family: system-ui, sans-serif; }
+  .scene-mapping-toolbar { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto; width: fit-content; }
+  .scene-mapping-toolbar button { min-height: 36px; padding: 7px 10px; border: 1px solid #55697b; border-radius: 6px; color: #edf2f4; background: #18232e; font: 12px/1.3 system-ui,sans-serif; cursor: pointer; }
+  .scene-mapping-toolbar button[aria-pressed="true"] { border-color: #92b3a1; background: #263b35; }
+  .scene-mapping-toolbar button:focus-visible { outline: 2px solid #d9e9df; outline-offset: 2px; }
+  .scene-mapping-toolbar button:disabled { opacity: .5; cursor: default; }
+  .scene-mapping-status { position: absolute; top: 54px; left: 10px; font-size: 11px; color: #d1dbe1; background: #0f1218cc; max-width: calc(100% - 20px); }
+  .scene-mapping-legend { position: absolute; bottom: 8px; left: 8px; right: 8px; padding: 8px 10px; color: #d7e2e8; background: #16212dea; border: 1px solid #344453; border-radius: 7px; font-size: 11px; line-height: 1.8; }
+  .scene-mapping-wires { position: absolute; width: 100%; height: 100%; inset: 0; overflow: hidden; }
+  .scene-mapping-wires path { fill: none; stroke-width: 1; opacity: .7; }
+  .scene-mapping-callout { position: absolute; top: 0; left: 0; padding: 5px 7px; background: #16202eee; border: 1px solid; border-radius: 5px; color: #f0f4f6; font-size: 11px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .scene-mapping-callout[hidden], .scene-mapping-labels[hidden], .scene-mapping-legend[hidden] { display: none; }
   @media (max-width: 720px) {
     body.nrlab-viz #ui { inset: auto; max-height: 190px; }
     body.nrlab-viz #c { inset: auto; }
@@ -169,6 +181,7 @@
 <script type="module">
 import * as THREE from "three";
 import { SVGRenderer } from 'three/addons/renderers/SVGRenderer.js';
+import { createMappingLayer } from '../mapping-scene.mjs';
 const embedded = new URLSearchParams(location.search).has('embedded');
 if (embedded) document.body.classList.add('embedded');
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -232,6 +245,9 @@ let compositeForecast = null;
 const PREDICT_YEARS = 1;
 const COMPOSITE_ID = "composite";
 
+const mappingLayer = createMappingLayer({THREE, scene, host, camera,
+  pointFor:polarToThree, registerPickable:tagPickable, invalidate:()=>{ needsSoftwareRender = true; },
+  onDetails:id=>{const ev=eventById.get(id);if(ev){showAnno(ev);annoEl.classList.add('open');}}});
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
@@ -239,6 +255,7 @@ function fitCameraToViewport() {
   if (!lastPayload || !treeGroup.children.length) return;
   treeGroup.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(treeGroup);
+  box.expandByObject(mappingLayer.group);
   if (box.isEmpty()) return;
   const center = box.getCenter(new THREE.Vector3());
   const direction = camera.position.clone().sub(controls.target).normalize();
@@ -285,6 +302,7 @@ function clearHighlightExtras() {
 }
 
 function clearTree() {
+  mappingLayer.clear();
   needsSoftwareRender = true;
   while (treeGroup.children.length) {
     const o = treeGroup.children.pop();
@@ -734,7 +752,7 @@ function showAnno(ev) {
       ["F20 delta_dir", F.F20_delta_dir],
       ["F0 where_eco", F.F0_where_eco],
     ]);
-  annoEl.classList.add("open");
+  if (!ev.mapping) annoEl.classList.add("open");
 }
 
 function addDashedDrop(from, to, color) {
@@ -755,6 +773,7 @@ function addDashedDrop(from, to, color) {
 
 function setHighlight(eventId) {
   selectedId = eventId;
+  mappingLayer.select(eventId);
   clearHighlightExtras();
   pickables.forEach((m) => {
     if (!m.material || !m.material.emissive) return;
@@ -1266,6 +1285,8 @@ function renderPayload(payload) {
   const trunkH = buildTrunk(ageLo, trunkAgeHi);
   addPolarFloorGuides();
   events.forEach((ev) => addTrajectory(ev, ageLo, trunkAgeHi, trunkH, ageNow));
+  const mappingEvents = events.map(ev=>({...ev,path_ar:Array.isArray(ev.path_ar)&&ev.path_ar.length>=2?ev.path_ar:synthPathAR(ev,ageNow)}));
+  mappingLayer.build(mappingEvents,deriveF,ageLo,trunkAgeHi,trunkH,ageNow);
   if (viewMode === "stereo") {
     addCrownComposite(events, ageLo, ageNow, trunkAgeHi, trunkH);
   }
@@ -2536,7 +2557,9 @@ host.addEventListener("pointerup", (e) => {
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(pickables, false);
+  if (e.target.closest('button')) return;
+  const visiblePickables = pickables.filter(obj=>{for(let p=obj;p;p=p.parent)if(!p.visible)return false;return true;});
+  const hits = raycaster.intersectObjects(visiblePickables, false);
   if (!hits.length) {
     annoEl.classList.remove("open");
     setHighlight(null);
@@ -2590,6 +2613,7 @@ function loop() {
   } else {
     controls.update();
   }
+  mappingLayer.update();
   if (softwareRenderer) renderSoftwareScene();
   else renderer.render(scene, camera);
 }

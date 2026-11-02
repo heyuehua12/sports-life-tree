@@ -279,7 +279,7 @@ function detailCard(e,index) {
     const selected=multiple?d[field].includes(x):(field==='how'?resolution.how:d[field])===x;
     return `<button class="chip ${selected?'is-selected':''}" aria-pressed="${selected}" ${field==='how'&&resolution.source==='path_crossing_rule'?'disabled':''} data-chip="${e.id}|${field}|${esc(x)}" type="button">${esc(x)}</button>`;
   }).join('');
-  const select=(field,label,choices)=>`<div class="field"><label for="detail-${e.id}-${field}">${esc(label)}</label><select id="detail-${e.id}-${field}" data-detail-field="${e.id}|${field}"><option value="">未作答</option>${choices.map(([value,text])=>`<option value="${esc(value)}" ${String(d[field])===String(value)?'selected':''}>${esc(text)}</option>`).join('')}</select></div>`;
+  const select=(field,label,choices)=>`<fieldset class="field detail-choices"><legend>${esc(label)}</legend><div class="chip-grid">${[...choices,['','暂不填写']].map(([value,text])=>`<label class="pick-tile detail-option"><input type="radio" name="detail-${esc(e.id)}-${field}" data-detail-field="${esc(e.id)}|${field}" value="${esc(value)}" ${String(d[field]??'')===String(value)?'checked':''}/><span>${esc(text)}</span></label>`).join('')}</div></fieldset>`;
   const pairs=values=>values.map(x=>[x,x]);
   const levels=['班级或院系','校级','社区或俱乐部','市级','省级','国家级','国际级','其他或说不清'].map(x=>[x,x]);
   const interpersonal=primary&&!['自己','说不清'].includes(primary);

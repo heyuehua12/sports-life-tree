@@ -29,10 +29,10 @@
     status.textContent = '正在载入三维轨迹…';
     const missing = payload.events.filter(e => e.centrality == null).length;
     const note = document.createElement('p'); note.className = 'three-d-note';
-    note.textContent = '角度优先按“在人生故事中有多重要”评分展开，未评分时采用原版条目参考权重；两项均缺失则暂用半区中线，仅作展示。' + (missing ? `${missing} 件经历尚未评中心性。` : '') + '紫色代表好事，绿色代表不好的事；半径代表影响强度，竖向代表年龄。黄色合成箭杆及 +1 年外推沿用原版，仅作几何示意。三维用影响绝对值显示，跨轴方向保留在二维轨迹和导出记录中。';
+    note.textContent = '图中附加环弧、双环、转折标记、底座环和当前影响光环；左上角可开关标记、切换全部／选中经历。未出现的维度可返回第四步补答，体育新增事件没有原版参考权重时不画底座环。角度优先用中心性，未评分时用原版条目参考权重；两项均缺失时只按半区中线展示。' + (missing ? `${missing} 件经历尚未评中心性。` : '') + '紫正、绿负，半径为影响强度，竖向为年龄。字典码沿用原版类别映射。黄色合成箭杆与 +1 年外推仅作几何示意；跨轴方向保留在二维和原始轨迹中。';
     const panel = document.createElement('section');panel.className='mapping-panel';panel.setAttribute('aria-label','博导原版六类映射');
     const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    panel.innerHTML=`<h4>这件经历映射了什么？</h4><p>沿用博导原版六类构念与 F0–F20 字段。下方直接展开，点选三维轨迹也会同步切换。</p><label for="mappingEvent">查看经历</label><select id="mappingEvent">${payload.events.map(e=>`<option value="${safe(e.id)}">${safe(e.label)}</option>`).join('')}</select><div class="mapping-content" aria-live="polite"></div>`;
+    panel.innerHTML=`<h4>图中标记对应的原答与字段</h4><p>上方已将维度画在树上；这里保留六类构念与 F0–F20 的数值和来源。点选三维轨迹会同步切换。</p><label for="mappingEvent">查看经历</label><select id="mappingEvent">${payload.events.map(e=>`<option value="${safe(e.id)}">${safe(e.label)}</option>`).join('')}</select><div class="mapping-content" aria-live="polite"></div>`;
     const picker=panel.querySelector('select'),content=panel.querySelector('.mapping-content');
     const describeSource=value=>({self_report_centrality:'本人中心性评分',mentor_item_reference:'博导原版条目参考权重',display_default_only:'展示用中线（未作为实测值）',path_crossing_rule:'原版跨轴规则',path_crossing:'跨轴轨迹点',original_crossing_sample:'原绘图核心的跨轴采样点',self_report:'本人回答',unanswered:'未填写',not_applicable:'不适用'}[value]||value);
     const showMapping=id=>{
