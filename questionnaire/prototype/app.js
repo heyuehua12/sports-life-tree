@@ -1,16 +1,13 @@
 const STORAGE_KEY = "sports-life-tree-prototype-v0.1";
 
 const catalog = [...LifeEventCatalog, ...SportsEventCatalog.map(item => ({...item, source_scope: 'sports'}))];
-let openEventGroups = new Set();
 let catalogScope = 'all';
 let treeFilter = 'all';
 let replayDrawingTutorial = false;
 
 const options = {
-  where: ["家庭或宿舍", "学校", "社区或校外", "线上", "多个场景", "其他地方", "说不清"],
+  where: MentorReference.where,
   who: ["家人", "朋友", "同学", "老师", "恋人", "自己", "网上他人", "其他人", "说不清"],
-  why: ["自己的努力或选择", "他人的决定或行为", "他人的帮助或支持", "人际冲突", "健康或身体状况", "资源或机会", "家庭或学业状况", "偶然或意外", "说不清"],
-  how: ["持续变好", "短期变好后回落", "一直保持", "一直困难或尚未解决", "有人帮助后改善", "逐渐恢复或适应", "后来中断或失去", "说不清"],
 };
 
 const defaultState = () => ({
@@ -39,8 +36,8 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved) return defaultState();
-    if (saved.schema_version !== LifeHistory.VERSION && !localStorage.getItem(STORAGE_KEY + '-before-v0.8')) {
-      try { localStorage.setItem(STORAGE_KEY + '-before-v0.8', JSON.stringify(saved)); } catch (_) { saved.draft_backup_failed = true; }
+    if (saved.schema_version !== LifeHistory.VERSION && !localStorage.getItem(STORAGE_KEY + '-before-v0.9')) {
+      try { localStorage.setItem(STORAGE_KEY + '-before-v0.9', JSON.stringify(saved)); } catch (_) { saved.draft_backup_failed = true; }
     }
     const merged = Object.assign(defaultState(), saved);
     merged.profile = { ...defaultState().profile, ...saved.profile };
@@ -151,15 +148,14 @@ function renderEvents() {
     const items = available.filter(e => e.source_scope === scope);
     const groups=scope==='general'?[...new Set(items.map(e=>e.group_index))].sort((a,b)=>a-b).map(index=>({title:items.find(e=>e.group_index===index).group_title,items:items.filter(e=>e.group_index===index)})):[...new Set(items.map(e=>e.theme))].map(theme=>({title:theme,items:items.filter(e=>e.theme===theme)}));
     return `<section class="catalog-module"><h3>${title}<span class="module-count">${items.length} 项提示</span></h3><p class="hint">${intro}</p>${groups.map(({title:theme,items:group},i) => {
-      const key = scope + '-' + i;
       const selectedCount = group.filter(item => state.events.some(e => e.source_catalog_ids.includes(item.id))).length;
-      return `<details class="catalog-group" data-panel="${key}" ${openEventGroups.has(key) ? 'open' : ''}><summary>${esc(theme)}<span>${group.length} 项${selectedCount ? ' · 已选 ' + selectedCount : ''}</span></summary><div class="event-layout">${[-1,1].map(v => {const side=group.filter(e=>e.valence===v);return `<div class="event-column ${v>0?'positive':''}"><h4>${v>0?'好事（画右边）':'不好的事（画左边）'}</h4>${scope==='general'?`<p class="category-name">${esc(side[0]?.theme||'')}</p>`:''}${side.map(optionHTML).join('')}</div>`;}).join('')}</div></details>`;
+      return `<section class="catalog-group"><h4 class="catalog-heading">${esc(theme)}<span>${group.length} 项${selectedCount ? ' · 已选 ' + selectedCount : ''}</span></h4><div class="event-layout">${[-1,1].map(v => {const side=group.filter(e=>e.valence===v);return `<div class="event-column ${v>0?'positive':''}"><h4>${v>0?'好事（画右边）':'不好的事（画左边）'}</h4>${scope==='general'?`<p class="category-name">${esc(side[0]?.theme||'')}</p>`:''}${side.map(optionHTML).join('')}</div>`;}).join('')}</div></section>`;
     }).join('')}</section>`;
   };
   const specialistEvents = state.events.some(LifeHistory.isSpecialistEvent);
   stage.innerHTML = `<div class="stage-head"><div class="stage-kicker">第二步 · 生活经历</div><h2>把生活与体育经历放在一起。</h2><p class="stage-lead">回顾从小到现在，记录实际发生且愿意分享的事情。没有比赛或专项训练经历，也可以记录家庭、学业、人际等一般生活经历。</p><p class="hint">按当时的感受选择好事或不好的事，不要求每类选满。不同清单指向同一件事时，只保留一件、多选领域标签；不同时间的两件事请分别记录。</p></div>
     <div class="view-filters" role="group" aria-label="事件清单范围">${[['all','全部清单'],['general','一般生活'],['sports','体育专项']].map(([key,label])=>`<button type="button" class="choice ${catalogScope===key?'is-selected':''}" data-catalog-scope="${key}" aria-pressed="${catalogScope===key}">${label}</button>`).join('')}</div>
-    ${catalogScope !== 'sports' ? moduleHTML('general','一般生活事件','展开各领域，选择实际发生且愿意记录的事。同类事件发生多次时，可在已选列表中再次添加。') : ''}
+    ${catalogScope !== 'sports' ? moduleHTML('general','一般生活事件','各领域已全部展开，请选择实际发生且愿意记录的事。同类事件发生多次时，可在已选列表中再次添加。') : ''}
     ${catalogScope !== 'general' ? (eligible ? moduleHTML('sports','体育专项事件','有比赛或专项训练经历时补充。已在一般生活中记过的同一件事，无需重复选择。') : '<p class="notice">背景中没有比赛和专项训练经历，体育专项清单暂不开放。体育课或日常运动经历仍可在一般生活中记录，并标注与体育的关系。</p>') : ''}
     <section class="custom-history"><h3>清单没有提到？自己补充一件</h3><div class="event-layout">${[-1,1].map(v=>`<div class="custom-event"><input id="${v>0?'customPos':'customNeg'}" maxlength="160" aria-label="自己写一件${v>0?'好事':'不好的事'}" placeholder="自己写一件${v>0?'好事':'不好的事'}"/><button type="button" class="small-button" data-custom="${v}">添加</button></div>`).join('')}</div></section>
     <div class="selected-strip" id="selectedEvents"></div>
@@ -169,7 +165,6 @@ function renderEvents() {
     <p class="hint" id="eventMessage" role="status"></p>`;
   if(state.migrations?.length)stage.querySelector('.stage-head').insertAdjacentHTML('beforeend',`<p class="hint migration-note">草稿已升级，原有事件、轨迹和原答均保留。${state.events.some(e=>e.legacy_catalog)?'旧版清单记录仍在下方，不会被改写成新版题目。':''}${state.draft_backup_failed?'浏览器未能保存额外备份，请及时下载 JSON。':'升级前草稿已另存一份本机备份。'}</p>`);
   renderSelectedEvents();
-  stage.querySelectorAll('[data-panel]').forEach(el => el.addEventListener('toggle',()=>{ if(el.open)openEventGroups.add(el.dataset.panel);else openEventGroups.delete(el.dataset.panel); }));
   stage.querySelectorAll('[data-catalog-scope]').forEach(btn=>btn.addEventListener('click',()=>{catalogScope=btn.dataset.catalogScope;renderEvents();}));
   stage.querySelectorAll('[data-event]').forEach(input=>input.addEventListener('change',()=>toggleEvent(input.dataset.event,input.checked)));
   for (const [name,key] of [['event-response','event_response'],['sports-response','sports_event_response']]) stage.querySelectorAll(`[name="${name}"]`).forEach(input=>input.addEventListener('change',()=>{state[key]=input.value;saveState();}));
@@ -244,7 +239,12 @@ function renderDetails() {
   stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第四步 · 情境</div><h2>每一件经历，都有相同的核心问题。</h2><p class="stage-lead">一般生活与体育经历按同一顺序回答。训练、比赛、伤病等专项问题，只在对应经历中出现；不适用的项目不会记为零。</p></div><div class="detail-list">${state.events.map(detailCard).join('')}</div>`;
   stage.querySelectorAll('[data-chip]').forEach(btn=>btn.addEventListener('click',()=>{
     const [id,field,value]=btn.dataset.chip.split('|'),d=detailsFor(id);
+    const previous=EventMapping.derive(eventById(id),d,currentAge()).sources.who_primary;
     if(field==='who')d.who=d.who.includes(value)?d.who.filter(x=>x!==value):[...d.who,value];else d[field]=value;
+    if(field==='where')d.where_basis=null;
+    if(field==='why')d.why_basis=null;
+    if(field==='how'){d.context_change_history||=[];d.context_change_history.push({field:'how',age_mid:d.age_mid??null,r_mid:d.r_mid??null});d.age_mid=null;d.r_mid=null;}
+    if(field==='who'&&previous!==EventMapping.derive(eventById(id),d,currentAge()).sources.who_primary)resetPersonContext(d,previous);
     renderDetails();saveState();
   }));
   stage.querySelectorAll('[data-scale]').forEach(input=>input.addEventListener('input',()=>{
@@ -255,49 +255,65 @@ function renderDetails() {
   }));
   stage.querySelectorAll('[data-detail-field]').forEach(input=>input.addEventListener('change',()=>{
     const [id,field]=input.dataset.detailField.split('|');const d=detailsFor(id);
+    if(field==='who_primary'&&input.value!==d.who_primary)resetPersonContext(d,d.who_primary);
     d[field]=input.value===''?null:field==='injury_related'?input.value==='true':field==='injury_stop_days'?Number(input.value):input.value;
-    if(field==='injury_related'||field==='competition_outcome')renderDetails();saveState();
+    if(['injury_related','competition_outcome','who_primary','who_tie_basis'].includes(field))renderDetails();saveState();
   }));
+}
+function resetPersonContext(d,previous) {
+  if(d.closeness!=null||d.who_tie_basis){d.context_change_history||=[];d.context_change_history.push({field:'who_primary',previous,closeness:d.closeness??null,who_tie_basis:d.who_tie_basis??null});}
+  d.closeness=null;d.who_tie_basis=null;
 }
 function detailCard(e,index) {
   const d=detailsFor(e.id);d.who ||= [];
   const sport=LifeHistory.isSports(e),training=LifeHistory.isTraining(e),competition=LifeHistory.isCompetition(e);
+  const referenceOptions=MentorReference.options[e.valence<0?'neg':'pos'];
+  const resolution=EventMapping.resolution(e,d,currentAge());
+  const primary=EventMapping.derive(e,d,currentAge()).sources.who_primary;
   const lists={
     where:[...options.where,...(sport?['训练场','比赛场']:[])],
     who:[...options.who,...(sport?['主教练','助教','队友','对手','裁判或组织者','学校或俱乐部管理者']:[])],
-    why:[...options.why,...(sport?['自己的训练或表现','教练反馈或决策','队友支持或冲突','选拔、排名或比赛结果']:[])],how:options.how,
+    why:[...referenceOptions.causes,...(sport?['自己的训练或表现','教练反馈或决策','队友支持或冲突','选拔、排名或比赛结果']:[])],how:referenceOptions.resolutions,
   };
   const chips=(field,multiple=false)=>[...new Set([...lists[field],...(multiple?d[field]||[]:d[field]?[d[field]]:[])])].map(x=>{
-    const selected=multiple?d[field].includes(x):d[field]===x;
-    return `<button class="chip ${selected?'is-selected':''}" aria-pressed="${selected}" data-chip="${e.id}|${field}|${esc(x)}" type="button">${esc(x)}</button>`;
+    const selected=multiple?d[field].includes(x):(field==='how'?resolution.how:d[field])===x;
+    return `<button class="chip ${selected?'is-selected':''}" aria-pressed="${selected}" ${field==='how'&&resolution.source==='path_crossing_rule'?'disabled':''} data-chip="${e.id}|${field}|${esc(x)}" type="button">${esc(x)}</button>`;
   }).join('');
-  const select=(field,label,choices)=>`<div class="field"><label for="detail-${e.id}-${field}">${label}</label><select id="detail-${e.id}-${field}" data-detail-field="${e.id}|${field}"><option value="">未作答</option>${choices.map(([value,text])=>`<option value="${value}" ${String(d[field])===String(value)?'selected':''}>${text}</option>`).join('')}</select></div>`;
+  const select=(field,label,choices)=>`<div class="field"><label for="detail-${e.id}-${field}">${esc(label)}</label><select id="detail-${e.id}-${field}" data-detail-field="${e.id}|${field}"><option value="">未作答</option>${choices.map(([value,text])=>`<option value="${esc(value)}" ${String(d[field])===String(value)?'selected':''}>${esc(text)}</option>`).join('')}</select></div>`;
+  const pairs=values=>values.map(x=>[x,x]);
   const levels=['班级或院系','校级','社区或俱乐部','市级','省级','国家级','国际级','其他或说不清'].map(x=>[x,x]);
-  const interpersonal=d.who.some(x=>!['自己','说不清'].includes(x));
+  const interpersonal=primary&&!['自己','说不清'].includes(primary);
   return `<article class="detail-card detail-card--${e.valence>0?'pos':'neg'}"><h3><span class="${e.valence>0?'tag-pos':'tag-neg'}">${String(index+1).padStart(2,'0')}</span> ${esc(e.label)}</h3><p class="hint">${e.domains.map(esc).join(' · ')} · ${LifeHistory.RELATIONS[e.sports_relation]||'体育关系待确认'}</p>
     <div class="field"><label>主要发生在哪里？</label><div class="chip-grid">${chips('where')}</div></div>
+    ${d.where&&!MentorReference.where.includes(d.where)?select('where_basis','这个地点主要属于哪类生活场景？',pairs(MentorReference.where)):''}
     <div class="field"><label>主要和谁有关？可多选</label><div class="chip-grid">${chips('who',true)}</div></div>
+    ${d.who.length>1?select('who_primary','其中对这件事最关键的是谁？',pairs(d.who)):''}
+    ${primary&&!MentorReference.who.includes(primary)?select('who_tie_basis','这位关键人物与你的关系更接近哪一类？',pairs(MentorReference.who)):''}
     <div class="field"><label>主要因为什么？</label><div class="chip-grid">${chips('why')}</div></div>
+    ${d.why&&!referenceOptions.causes.includes(d.why)?select('why_basis','这个原因更接近哪一类？',pairs(referenceOptions.causes)):''}
     <div class="field"><label>后来怎么样了？</label><div class="chip-grid">${chips('how')}</div></div>
-    ${interpersonal?`<div class="context-faders">${fader(e.id,'closeness','与相关他人的亲近／信任程度',LifeHistory.ratingValue(d,'closeness'),1,'data-scale')}</div>`:'<p class="hint">选择涉及他人后，可补充关系亲近／信任程度。</p>'}
+    ${resolution.source==='path_crossing_rule'?`<p class="hint">按博导原版规则，轨迹跨过中线后带入“${esc(resolution.how)}”。如不符合本意，请返回修改轨迹；之前的原答仍保留。</p>`:''}
+    ${resolution.need_mid?`<div class="context-faders">${fader(e.id,'age_mid','明显转折大约发生在几岁？',resolution.age_mid,resolution.hi,'data-scale',resolution.lo)}${fader(e.id,'r_mid','转折时的影响有多强？',resolution.r_mid,1,'data-scale')}</div><p class="hint">${['path_crossing','original_crossing_sample'].includes(resolution.age_mid_source)?'年龄由跨轴轨迹点带入，可调整。':'请回忆这段轨迹中的明显转折年龄。'}${['path_crossing','original_crossing_sample'].includes(resolution.r_mid_source)?'影响由同一轨迹点带入，可调整。':''} 未操作的空项不会写入默认值。</p>`:''}
+    ${interpersonal?`<div class="context-faders">${fader(e.id,'closeness',`与关键人物（${primary}）的亲近／信任程度`,LifeHistory.ratingValue(d,'closeness'),1,'data-scale')}</div>`:'<p class="hint">涉及多人时先选一位关键人物，再补充亲近／信任程度。</p>'}
     ${eventRatings(e)}
     ${training||competition?`<section class="sports-detail"><h4>这件经历的体育专项信息（选填）</h4><div class="context-faders">${training?fader(e.id,'autonomy','当时对训练安排的自主程度',LifeHistory.ratingValue(d,'autonomy'),1,'data-scale'):''}${fader(e.id,'fairness','当时对安排和机会的公平感',LifeHistory.ratingValue(d,'fairness'),1,'data-scale')}</div><div class="form-grid">${training?select('training_phase','当时主要处于哪个训练阶段？',[['start','开始训练'],['stable','持续训练'],['intensified','强化或备赛'],['pause','暂停训练'],['return','恢复训练'],['exit','退出训练'],['uncertain','说不清']]):''}${competition?select('competition_level','这件事涉及的比赛层级',levels)+select('competition_outcome','本次比赛或选拔的结果',[['awarded','获得名次、奖项或荣誉'],['not_awarded','参赛但未获奖'],['participation','以参与或选拔经历为主'],['uncertain','说不清']]):''}${competition&&(e.source_catalog_ids.includes('award')||d.competition_outcome==='awarded')?select('award_level','这次获奖的比赛层级',levels):''}${select('injury_related','这件事是否涉及运动伤病？',[[true,'是'],[false,'否']])}${d.injury_related===true?`<div class="field"><label for="days-${e.id}">因本次伤病完全停止训练的天数（0 表示未完全停训）</label><input id="days-${e.id}" type="number" min="0" max="${currentAge()*366}" step="1" data-detail-field="${e.id}|injury_stop_days" value="${esc(d.injury_stop_days??'')}"/></div>`:''}</div></section>`:''}
     <p class="hint">未操作的评分保留为未作答；旧版来源不明的评分需重新操作确认，原值保留在原答中。不适用的专项字段在导出时单独标记。</p></article>`;
 }
 
-function fader(id, field, label, value, max, attribute) {
+function fader(id, field, label, value, max, attribute, min=0) {
   const inputId = `rating-${id}-${field}`;
-  const current = value == null ? max / 2 : value;
+  const current = value == null ? (min+max) / 2 : value;
   return `<div class="field fader-field ${value == null ? "is-unanswered" : ""}">
     <div class="fader-heading"><label for="${inputId}">${esc(label)}</label><output class="fader-value" id="${id}-${field}" for="${inputId}">${value == null ? "未作答" : Number(value).toFixed(max === 1 ? 2 : 1)}</output></div>
-    <div class="fader-control"><input class="mixing-fader" id="${inputId}" ${attribute}="${id}|${field}" type="range" min="0" max="${max}" step="${max === 1 ? .01 : .1}" value="${current}" style="--range-fill:${current / max * 100}%" /><div class="fader-ticks" aria-hidden="true"></div></div>
-    <div class="fader-ends" aria-hidden="true"><span>低 · 0</span><span>高 · ${max}</span></div>
+    <div class="fader-control"><input class="mixing-fader" id="${inputId}" ${attribute}="${id}|${field}" type="range" min="${min}" max="${max}" step="${max === 1 ? .01 : .1}" value="${current}" style="--range-fill:${max===min?0:(current-min)/(max-min)*100}%" /><div class="fader-ticks" aria-hidden="true"></div></div>
+    <div class="fader-ends" aria-hidden="true"><span>${field==='age_mid'?'起始年龄':'低'} · ${min}</span><span>${field==='age_mid'?'结束年龄':'高'} · ${max}</span></div>
   </div>`;
 }
 
 function updateFader(input, id, field, value) {
   document.getElementById(`${id}-${field}`).textContent = value.toFixed(Number(input.max) === 1 ? 2 : 1);
-  input.style.setProperty("--range-fill", `${value / Number(input.max) * 100}%`);
+  const min=Number(input.min),max=Number(input.max);
+  input.style.setProperty("--range-fill", `${max===min?0:(value-min)/(max-min)*100}%`);
   input.closest(".fader-field").classList.remove("is-unanswered");
 }
 
@@ -326,10 +342,12 @@ function buildPayload() {
     profile:state.profile,exposure,
     events:state.events.map(e=>{
       const details=LifeHistory.detailsForExport(e,state.details[e.id]||{});
-      const unanswered=['where','why','how'].filter(key=>details[key]==null);
+      const mapping=EventMapping.derive(e,details,currentAge());
+      const unanswered=['where','why'].filter(key=>details[key]==null);
+      if(mapping.how==null)unanswered.push('how');
       if(!details.who.length)unanswered.push('who');
       for(const key of ['centrality','now_salience'])if(e[key]==null)unanswered.push(key);
-      return {...e,details,details_raw:state.details[e.id]||null,training_timing:LifeHistory.timing(e,state.profile),unanswered_core_fields:unanswered};
+      return {...e,mapping,details,details_raw:state.details[e.id]||null,training_timing:LifeHistory.timing(e,state.profile),unanswered_core_fields:unanswered};
     }),scales:state.scale,
     process:{n_events:state.events.length,n_sports_related:sportsN,n_non_sports:state.events.filter(e=>e.sports_relation==='none').length,
       n_unclassified:state.events.filter(e=>!LifeHistory.isSports(e)&&e.sports_relation!=='none').length,
@@ -401,6 +419,8 @@ function validate() {
     }
   }
   if (state.step === 3) {
+    const badMid=state.events.find(e=>{const d=state.details[e.id]||{},h=EventMapping.resolution(e,d,currentAge());return h.need_mid&&d.age_mid!=null&&(!Number.isFinite(Number(d.age_mid))||Number(d.age_mid)<h.lo||Number(d.age_mid)>h.hi);});
+    if(badMid){alert(`请核对“${badMid.label}”的转折年龄，应在当前轨迹起止年龄之间。`);return false;}
     const awardConflict=state.events.find(e=>{
       const d=LifeHistory.detailsForExport(e,state.details[e.id]||{});
       return (d.competition_outcome==='awarded'&&state.profile.award_history!==true)||(e.source_catalog_ids.includes('award')&&d.competition_outcome==='not_awarded');

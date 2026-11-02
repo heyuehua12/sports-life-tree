@@ -620,6 +620,7 @@ function addCylinderSeg(a, b, radA, radB, color, eventId) {
 
 /** 映射表：统计 F0–F20（与 README §2.1 一致） */
 function deriveF(ev) {
+  if (ev.mapping?.fields) return ev.mapping.fields;
   const r0 = ev.r_then != null ? Number(ev.r_then) : null;
   const r1 = ev.r_now != null ? Number(ev.r_now) : null;
   const delta = (r0 != null && r1 != null) ? Math.round((r1 - r0) * 1000) / 1000 : (ev.impact_delta != null ? Number(ev.impact_delta) : null);
@@ -675,14 +676,15 @@ function showAnno(ev) {
     showCompositeAnno(ev);
     return;
   }
+  if (embedded) parent.postMessage({type:'sports-life-tree-event-selected',id:ev.event_id},location.origin);
   const F = deriveF(ev);
   const side = ev.valence >= 0 ? "好事" : "不好的事";
   const dirWord = F.F20_delta_dir === "down" ? "衰减"
-    : F.F20_delta_dir === "up" ? "加重" : "平稳";
+    : F.F20_delta_dir === "up" ? "影响增强" : F.F20_delta_dir === "flat" ? "变化较小" : "变化未填写";
   const a0 = F.F15_age_start != null ? F.F15_age_start : "—";
   const a1 = F.F16_age_end != null ? F.F16_age_end : "今";
   annoTitle.textContent = `${side} · ${ev.item_key || "(未命名)"}`;
-  const deg = Math.round(F.F18_theta * 180 / Math.PI);
+  const deg = F.F18_theta == null ? "—" : Math.round(F.F18_theta * 180 / Math.PI);
   annoBody.innerHTML =
     `<p class="oneliner">${side} · ${dirWord} · ${a0}→${a1}岁</p>` +
     layerBlock("Lq", "测量 Q1–Q8（原答）", [
@@ -716,9 +718,10 @@ function showAnno(ev) {
       ["F9 r_mid", F.F9_r_mid],
       ["F10 impact_delta", F.F10_impact_delta],
     ]) +
-    layerBlock("Lf5", "F11–F12 · 构念5 客观常模", [
+    layerBlock("Lf5", "F11–F12 · 构念5 原版条目参考权重", [
       ["F11 obj_raw", F.F11_obj_raw],
       ["F12 obj_w", F.F12_obj_w],
+      ["权重说明", ev.mapping ? "沿用博导条目参考；体育新增、自填或多条目合并不套用权重" : "原版模拟示例"],
     ]) +
     layerBlock("Lf6", "F13–F20 · 构念6 影响轨迹", [
       ["F13 r_then", F.F13_r_then],
@@ -2603,6 +2606,11 @@ if (!embedded) {
   errEl.textContent = '原版四条典型演示（非你的作答数据）';
 } else { errEl.textContent = '等待当前作答轨迹…'; }
 window.addEventListener('message', event => {
+  if (embedded && event.origin === location.origin && event.source === parent && event.data?.type === 'sports-life-tree-select-event') {
+    const ev = lastPayload?.events.find(item => String(item.event_id) === String(event.data.id));
+    if (ev) { setHighlight(ev.event_id); showAnno(ev); }
+    return;
+  }
   if (!embedded || event.origin !== location.origin || event.source !== parent || event.data?.type !== 'sports-life-tree-data') return;
   try {
     const payload = normalizePayload(event.data.payload);

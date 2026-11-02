@@ -443,6 +443,9 @@ h1 { font-size: clamp(1.3rem, 2.6vw, 1.7rem); letter-spacing: -.02em; font-weigh
 .catalog-group .event-column.positive { background: #faf7fb; }
 .catalog-group h4 { color: #2f6d40; font-size: .88rem; margin-bottom: 3px; }
 .catalog-group .positive h4 { color: #753c80; }
+.catalog-group > .catalog-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; padding: 16px 18px; border-bottom: 1px solid var(--line); background: #f4f8f4; color: #3b5644; font-size: 1rem; }
+.catalog-heading > span { flex-shrink: 0; color: #596b62; font-size: .8rem; font-weight: 400; }
+.chip:disabled { cursor: default; opacity: .7; }
 .event-column .category-name { color: var(--muted); font-size: .76rem; margin: 0 0 12px; }
 .event-option { border: 0; padding: 12px 8px; border-radius: 8px; line-height: 1.65; font-size: .9rem; cursor: pointer; }
 .event-option:hover { background: #eaf2ec; }

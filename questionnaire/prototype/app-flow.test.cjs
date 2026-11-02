@@ -42,6 +42,8 @@ function practice(m){
 const m=mount();background(m);
 assert.ok(m.doc.querySelector('[data-event="mentor_pos_05"]'));
 assert.equal(m.doc.querySelectorAll('[data-event^="mentor_"]').length,52);
+assert.equal(m.doc.querySelector('details.catalog-group'),null,'event categories are actual expanded sections');
+assert.equal(m.doc.querySelectorAll('.catalog-group .event-layout').length,7);
 assert.equal(m.doc.querySelector('[data-event="award"]'),null);
 select(m,'mentor_pos_05','none');
 click(m,'[data-repeat="mentor_pos_05"]');assert.equal(m.run('state.events.length'),2);
@@ -66,6 +68,8 @@ input(m,'#rating-mentor_pos_05-centrality','0');
 input(m,'#rating-mentor_pos_05-now_salience','0');
 click(m,'#nextBtn');assert.equal(m.run('state.step'),4);assert.ok(m.doc.querySelector('#commonTree2D svg'));
 let payload=m.w.buildPayload();assert.equal(payload.events[0].details.closeness,0);assert.equal(payload.events[0].centrality,0);assert.equal(payload.events[0].details.autonomy,null);assert.equal(payload.process.n_non_sports,1);assert.equal(payload.process.sports_specialist_response,'not_applicable_no_exposure');assert.equal(payload.process.outcome_scales_status,'not_integrated');
+assert.equal(m.doc.querySelectorAll('.mapping-group').length,6);assert.equal(m.doc.querySelectorAll('.mapping-group dt').length,21);
+assert.equal(payload.events[0].mapping.fields.F19_is_focal_now,false);assert.equal(payload.events[0].mapping.fields.F18_theta,0);
 const before=m.run('JSON.stringify(state.events)');click(m,'[data-tree-filter="sports"]');assert.equal(m.doc.querySelector('#threeDTree iframe'),null);assert.equal(m.run('JSON.stringify(state.events)'),before);
 click(m,'[data-tree-filter="all"]');change(m,'#treeDomain','学业');assert.ok(m.doc.querySelector('#commonTree2D polyline'));assert.equal(m.run('JSON.stringify(state.events)'),before);
 assert.deepEqual(m.errors,[]);m.dom.window.close();
@@ -81,7 +85,7 @@ click(t,'#nextBtn');assert.ok(t.doc.querySelector('[data-scale$="|autonomy"]'));
 change(t,'[data-detail-field$="|injury_related"]','true');assert.ok(t.doc.querySelector('[data-detail-field$="|injury_stop_days"]'));change(t,'[data-detail-field$="|injury_stop_days"]','0');click(t,'#nextBtn');assert.equal(t.w.buildPayload().events[0].details.injury_stop_days,0);assert.equal(t.w.buildPayload().process.n_events,1);assert.deepEqual(t.errors,[]);t.dom.window.close();
 
 const legacy={step:4,profile:{age:'20',training_history:true,competition_history:false},events:[{id:'injury',label:'伤病影响训练或比赛',valence:-1,trajectory_version:3,trajectory_age_now:20,path_ar:[[12,-.7],[20,-.2]]}],details:{injury:{who:['家人'],closeness:.5}}};
-const old=mount(legacy);assert.equal(old.run('state.step'),1);assert.equal(old.run('state.events[0].sports_relation'),'sports_unspecified');assert.equal(old.w.localStorage.getItem(KEY+'-before-v0.8'),JSON.stringify(legacy));assert.deepEqual(JSON.parse(old.run('JSON.stringify(state.events[0].path_ar)')),legacy.events[0].path_ar);
+const old=mount(legacy);assert.equal(old.run('state.step'),1);assert.equal(old.run('state.events[0].sports_relation'),'sports_unspecified');assert.equal(old.w.localStorage.getItem(KEY+'-before-v0.9'),JSON.stringify(legacy));assert.deepEqual(JSON.parse(old.run('JSON.stringify(state.events[0].path_ar)')),legacy.events[0].path_ar);
 change(old,'#relation-injury','training');click(old,'#nextBtn');practice(old);click(old,'#nextBtn');assert.equal(old.run('state.step'),3);
 assert.equal(old.doc.querySelector('#injury-closeness').textContent,'未作答');
 assert.equal(old.w.buildPayload().events[0].details.closeness,null);
@@ -103,6 +107,33 @@ change(c,'[data-detail-field$="|award_level"]',awardSelect.options[1].value);
 click(c,'#nextBtn');assert.equal(c.run('state.step'),4);
 assert.equal(c.w.buildPayload().events[0].details.competition_outcome,'awarded');
 assert.ok(c.w.buildPayload().events[0].details.award_level);assert.deepEqual(c.errors,[]);c.dom.window.close();
+
+// Exercise the new correspondence and conditional turning-point questions.
+const mappedDraft={schema_version:require('./life-history-model.js').VERSION,step:3,
+  profile:{age:'20',training_history:true,competition_history:false},details:{},
+  events:[{id:'injury',label:'运动伤病（测试）',valence:-1,source_scope:'sports',source_catalog_ids:['injury'],domains:['体育','健康'],sports_relation:'training',relation_confirmed:true,trajectory_version:3,trajectory_age_now:20,path_ar:[[17,-.8],[18,-.4],[20,-.1]]},
+    {id:'support',label:'得到支持 <img src=x onerror=alert(1)>',valence:1,source_scope:'sports',source_catalog_ids:['support'],domains:['体育','人际'],sports_relation:'training',relation_confirmed:true,trajectory_version:3,trajectory_age_now:20,path_ar:[[16,.4],[20,.8]]}]};
+const q=mount(mappedDraft);assert.equal(q.run('state.step'),3);
+click(q,'[data-chip="injury|where|训练场"]');change(q,'[data-detail-field="injury|where_basis"]','学校');
+click(q,'[data-chip="injury|who|主教练"]');input(q,'#rating-injury-closeness','.8');
+click(q,'[data-chip="injury|who|队友"]');assert.equal(q.doc.querySelector('#rating-injury-closeness'),null);
+change(q,'[data-detail-field="injury|who_primary"]','主教练');change(q,'[data-detail-field="injury|who_tie_basis"]','老师');input(q,'#rating-injury-closeness','0');
+click(q,'[data-chip="injury|why|教练反馈或决策"]');change(q,'[data-detail-field="injury|why_basis"]','别人行为');
+click(q,'[data-chip="injury|how|后来变得更糟"]');assert.equal(q.doc.querySelector('#injury-age_mid').textContent,'未作答');
+assert.equal(q.w.buildPayload().events[0].mapping.fields.F8_age_mid,null);
+input(q,'#rating-injury-age_mid','18');input(q,'#rating-injury-r_mid','0');
+const completeMapping=q.w.buildPayload().events[0].mapping;
+assert.equal(completeMapping.fields.F8_age_mid,18);assert.equal(completeMapping.fields.F9_r_mid,0);assert.equal(completeMapping.fields.F4_closeness,0);
+assert.equal(completeMapping.sources.who_tie_basis,'老师');assert.equal(completeMapping.sources.why_basis,'别人行为');assert.equal(completeMapping.sources.where_basis,'学校');
+click(q,'#nextBtn');const frame=q.doc.querySelector('#threeDTree iframe');let sent;
+frame.contentWindow.postMessage=data=>{sent=data;};
+q.w.dispatchEvent(new q.w.MessageEvent('message',{origin:'https://wrong.example',source:frame.contentWindow,data:{type:'sports-life-tree-ready'}}));assert.equal(sent,undefined);
+q.w.dispatchEvent(new q.w.MessageEvent('message',{origin:q.w.location.origin,source:frame.contentWindow,data:{type:'sports-life-tree-ready'}}));
+assert.equal(JSON.stringify(sent.payload.events[0].mapping),JSON.stringify(completeMapping),'questionnaire export and 3D receive identical mappings');
+change(q,'#mappingEvent','support');assert.equal(sent.type,'sports-life-tree-select-event');assert.equal(sent.id,'support');assert.equal(q.doc.querySelector('.mapping-panel img'),null,'written labels are escaped');
+q.w.dispatchEvent(new q.w.MessageEvent('message',{origin:'https://wrong.example',source:frame.contentWindow,data:{type:'sports-life-tree-event-selected',id:'injury'}}));assert.equal(q.doc.querySelector('#mappingEvent').value,'support');
+q.w.dispatchEvent(new q.w.MessageEvent('message',{origin:q.w.location.origin,source:frame.contentWindow,data:{type:'sports-life-tree-event-selected',id:'injury'}}));assert.equal(q.doc.querySelector('#mappingEvent').value,'injury');
+assert.deepEqual(q.errors,[]);q.dom.window.close();
 
 // Exercise the demo's real inline script and the iframe handshake, without
 // loading a browser, network resources or a WebGL renderer.

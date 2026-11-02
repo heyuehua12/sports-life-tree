@@ -6,10 +6,11 @@
   "three_version": "0.160.0",
   "adaptation": [
     "Local dependencies",
-    "Same-origin questionnaire bridge",
+    "Same-origin questionnaire bridge and selection synchronization",
     "Embedded layout",
     "Annotation text escaping",
     "Explicit zero radius handling",
+    "Canonical F0–F20 mappings with missing values preserved",
     "SVGRenderer compatibility fallback with original Three.js geometry",
     "Fit original camera orientation to viewport bounds"
   ]

@@ -36,6 +36,8 @@
   </main>
   <script src="life-tree.js"></script>
   <script src="life-history-model.js"></script>
+  <script src="mentor-reference.js"></script>
+  <script src="event-mapping.js"></script>
   <script src="life-tree-3d.js"></script>
   <script>
     const events = [
@@ -55,9 +57,9 @@
         path_ar: [[17,-.8],[17.5,-.9],[18,-.68],[18.5,-.4],[19,-.28],[20,-.18]] }
     ];
     const details = {
-      'demo-family': { where: '家庭或宿舍', who: ['家人'], why: '家人的理解和支持', how: '逐渐适应大学生活', closeness: .9 },
-      'demo-award': { where: '学校比赛场馆', who: ['教练','队友'], why: '自己的努力与团队支持', how: '持续训练并得到鼓励', closeness: .85 },
-      'demo-injury': { where: '专项训练场', who: ['教练','队友','家人'], why: '运动伤病', how: '获得支持并逐步康复', closeness: .75 }
+      'demo-family': { where: '家里', who: ['家人'], why: '别人帮助', how: '一直保持到现在', closeness: .9 },
+      'demo-award': { where: '比赛场', where_basis:'学校', who: ['主教练','队友'], who_primary:'主教练', who_tie_basis:'老师', why: '自己的训练或表现', why_basis:'自己努力', how: '慢慢淡下去了', closeness: .85 },
+      'demo-injury': { where: '训练场', where_basis:'学校', who: ['主教练','队友','家人'], who_primary:'家人', why: '意外碰巧', how: '有人帮了我', closeness: .75 }
     };
     LifeTree3D.render({ host: document.getElementById('tree'), events, details, age: 20 });
     document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{

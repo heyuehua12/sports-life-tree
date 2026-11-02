@@ -118,6 +118,14 @@ replace('  return String(v);\n}\n\nfunction layerBlock', `  return String(v).rep
 function layerBlock`);
 // Preserve the original .05 visual minimum, but do not turn zero into .5.
 html = html.replaceAll('Number(r) || 0.5', '(r != null && Number.isFinite(Number(r)) ? Number(r) : 0.5)');
+// The questionnaire supplies canonical mappings, including explicit missing values.
+replace('function deriveF(ev) {', 'function deriveF(ev) {\n  if (ev.mapping?.fields) return ev.mapping.fields;');
+replace('  const deg = Math.round(F.F18_theta * 180 / Math.PI);', '  const deg = F.F18_theta == null ? "—" : Math.round(F.F18_theta * 180 / Math.PI);');
+replace(': F.F20_delta_dir === "up" ? "加重" : "平稳";', ': F.F20_delta_dir === "up" ? "影响增强" : F.F20_delta_dir === "flat" ? "变化较小" : "变化未填写";');
+replace('F11–F12 · 构念5 客观常模','F11–F12 · 构念5 原版条目参考权重');
+replace('["F12 obj_w", F.F12_obj_w],','["F12 obj_w", F.F12_obj_w],\n      ["权重说明", ev.mapping ? "沿用博导条目参考；体育新增、自填或多条目合并不套用权重" : "原版模拟示例"],');
+replace('  const F = deriveF(ev);', `  if (embedded) parent.postMessage({type:'sports-life-tree-event-selected',id:ev.event_id},location.origin);
+  const F = deriveF(ev);`);
 replace('document.getElementById("btn-four").click();\n</script>', `
 document.getElementById('loading').hidden = true;
 if (!embedded) {
@@ -125,6 +133,11 @@ if (!embedded) {
   errEl.textContent = '原版四条典型演示（非你的作答数据）';
 } else { errEl.textContent = '等待当前作答轨迹…'; }
 window.addEventListener('message', event => {
+  if (embedded && event.origin === location.origin && event.source === parent && event.data?.type === 'sports-life-tree-select-event') {
+    const ev = lastPayload?.events.find(item => String(item.event_id) === String(event.data.id));
+    if (ev) { setHighlight(ev.event_id); showAnno(ev); }
+    return;
+  }
   if (!embedded || event.origin !== location.origin || event.source !== parent || event.data?.type !== 'sports-life-tree-data') return;
   try {
     const payload = normalizePayload(event.data.payload);
@@ -149,6 +162,6 @@ fs.writeFileSync(path.join(outDir, 'SOURCE.json'), JSON.stringify({
   source_url: 'https://zhenghui.fun/tools/life-tree-viz', retrieved_date: '2026-11-02',
   source_sha256: crypto.createHash('sha256').update(fs.readFileSync(sourceFile)).digest('hex'),
   viewer: 'NRLab life-tree 3D v3.5', three_version: '0.160.0',
-  adaptation: ['Local dependencies', 'Same-origin questionnaire bridge', 'Embedded layout', 'Annotation text escaping', 'Explicit zero radius handling', 'SVGRenderer compatibility fallback with original Three.js geometry', 'Fit original camera orientation to viewport bounds'],
+  adaptation: ['Local dependencies', 'Same-origin questionnaire bridge and selection synchronization', 'Embedded layout', 'Annotation text escaping', 'Explicit zero radius handling', 'Canonical F0–F20 mappings with missing values preserved', 'SVGRenderer compatibility fallback with original Three.js geometry', 'Fit original camera orientation to viewport bounds'],
 }, null, 2));
 console.log('Adapted original NRLab 3D viewer to mentor-3d/index.html');

@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const VERSION = 'sports-life-tree-prototype-v0.8';
+  const VERSION = 'sports-life-tree-prototype-v0.9';
   const DOMAINS = ['家庭','学业','人际','健康','生活转变','个人成长'];
   const RELATIONS = { none:'与体育无关', training:'专项训练', competition:'体育比赛', training_and_competition:'训练与比赛都有', everyday_activity:'体育课或日常运动', sports_unspecified:'与体育有关，具体场景说不清', uncertain:'是否与体育有关说不清' };
   const sportsRelations = ['training','competition','training_and_competition','everyday_activity'];
@@ -20,7 +20,7 @@
   function normalize(state) {
     const migrated = state.schema_version !== VERSION;
     const fromVersion = state.schema_version;
-    const preSharedHistory = !['sports-life-tree-prototype-v0.7',VERSION].includes(fromVersion);
+    const preSharedHistory = !['sports-life-tree-prototype-v0.7','sports-life-tree-prototype-v0.8',VERSION].includes(fromVersion);
     state.events.forEach(normalizeEvent);
     state.merge_history ||= [];
     if (migrated) {
@@ -33,7 +33,7 @@
       state.events.forEach(event=>{
         if(event.source_catalog_ids.some(id=>id.startsWith('life_'))){event.legacy_catalog=true;event.source_catalog||='general-candidate-v0.7';}
       });
-      state.migrations.push({ from:fromVersion||'unversioned',to: VERSION, at: new Date().toISOString(), note: '原有事件、轨迹和原答保留，不改写为新清单题干；一般生活清单恢复博导原版，新增原版画线练习。' });
+      state.migrations.push({ from:fromVersion||'unversioned',to: VERSION, at: new Date().toISOString(), note: '原有事件、轨迹和原答保留；事件清单全部展开，接通原版 F0–F20 映射，新增类别由本人补选对应关系。' });
       if (preSharedHistory && !state.events.length) state.event_response = null;
     }
     state.sports_event_response ??= null;
@@ -101,8 +101,12 @@
   }
   const ratingValue = (raw, field) => raw.rating_provenance?.[field] === 'legacy_unverified' ? null : raw[field] ?? null;
   function detailsForExport(event, raw = {}) {
-    const interpersonal = Array.isArray(raw.who) && raw.who.some(x => !['自己','说不清'].includes(x));
+    const people=Array.isArray(raw.who)?raw.who:[];
+    const primary=people.length===1?people[0]:people.includes(raw.who_primary)?raw.who_primary:null;
+    const interpersonal=primary&&!['自己','说不清'].includes(primary);
     const d = { where: raw.where ?? null, who: raw.who || [], why: raw.why ?? null, how: raw.how ?? null,
+      where_basis: raw.where_basis ?? null, who_primary: raw.who_primary ?? null, who_tie_basis: raw.who_tie_basis ?? null, why_basis: raw.why_basis ?? null,
+      age_mid: raw.age_mid ?? null, r_mid: ratingValue(raw,'r_mid'),
       closeness: interpersonal ? ratingValue(raw,'closeness') : null,
       sports_module_status: isTraining(event) || isCompetition(event) ? 'applicable' : 'not_applicable',
       autonomy: isTraining(event) ? ratingValue(raw,'autonomy') : null,
