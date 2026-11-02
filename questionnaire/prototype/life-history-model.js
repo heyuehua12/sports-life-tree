@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const VERSION = 'sports-life-tree-prototype-v0.7';
+  const VERSION = 'sports-life-tree-prototype-v0.8';
   const DOMAINS = ['家庭','学业','人际','健康','生活转变','个人成长'];
   const RELATIONS = { none:'与体育无关', training:'专项训练', competition:'体育比赛', training_and_competition:'训练与比赛都有', everyday_activity:'体育课或日常运动', sports_unspecified:'与体育有关，具体场景说不清', uncertain:'是否与体育有关说不清' };
   const sportsRelations = ['training','competition','training_and_competition','everyday_activity'];
@@ -19,19 +19,26 @@
   }
   function normalize(state) {
     const migrated = state.schema_version !== VERSION;
+    const fromVersion = state.schema_version;
+    const preSharedHistory = !['sports-life-tree-prototype-v0.7',VERSION].includes(fromVersion);
     state.events.forEach(normalizeEvent);
     state.merge_history ||= [];
     if (migrated) {
-      Object.values(state.details || {}).forEach(raw => {
+      if (preSharedHistory) Object.values(state.details || {}).forEach(raw => {
         if (!raw) return;
         raw.rating_provenance ||= {};
         for (const field of ['closeness','autonomy','fairness']) if (raw[field] != null && !raw.rating_provenance[field]) raw.rating_provenance[field] = 'legacy_unverified';
       });
       state.migrations ||= [];
-      state.migrations.push({ to: VERSION, at: new Date().toISOString(), note: '旧体育轨迹及原答保留；体育关系需确认；一般生活事件未视为已作答。' });
-      if (!state.events.length) state.event_response = null;
+      state.events.forEach(event=>{
+        if(event.source_catalog_ids.some(id=>id.startsWith('life_'))){event.legacy_catalog=true;event.source_catalog||='general-candidate-v0.7';}
+      });
+      state.migrations.push({ from:fromVersion||'unversioned',to: VERSION, at: new Date().toISOString(), note: '原有事件、轨迹和原答保留，不改写为新清单题干；一般生活清单恢复博导原版，新增原版画线练习。' });
+      if (preSharedHistory && !state.events.length) state.event_response = null;
     }
     state.sports_event_response ??= null;
+    state.tutor ??= null;
+    state.tutor_sessions ||= [];
     state.schema_version = VERSION;
     return state;
   }

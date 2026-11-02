@@ -3,7 +3,7 @@
   // Transport-only adapter. Scientific fields stay in the questionnaire.
   function payloadFor(events, details, age) {
     return {
-      age_now: age, tool_version: 'sports-life-tree-prototype-v0.7',
+      age_now: age, tool_version: 'sports-life-tree-prototype-v0.8',
       events: events.filter(e => root.LifeTree.isComplete(e, age)).map(e => {
         const d = details[e.id] || {};
         return { ...e, event_id: e.id, item_key: e.label,
