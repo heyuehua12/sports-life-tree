@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>体育经历生命树</title>
+  <desc>时间树干向上生长，左侧绿色、右侧紫色的经历枝条与树根相连。</desc>
+  <rect x="1" y="1" width="62" height="62" rx="16" fill="#F0F5F0" stroke="#D9E5DA"/>
+  <path d="M32 12v37m0 0-8 7m8-7 8 7" stroke="#697B69" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M31 43C21 39 14 30 14 20M31 32c-7-4-10-9-10-18" stroke="#2D8B4A" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M33 43c11-5 17-15 17-26M33 30c7-4 10-10 10-18" stroke="#7B2D8B" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="14" cy="20" r="4.2" fill="#2D8B4A" stroke="#F0F5F0" stroke-width="1.5"/>
+  <circle cx="21" cy="14" r="3.6" fill="#2D8B4A" stroke="#F0F5F0" stroke-width="1.5"/>
+  <circle cx="50" cy="17" r="4.2" fill="#7B2D8B" stroke="#F0F5F0" stroke-width="1.5"/>
+  <circle cx="43" cy="12" r="3.6" fill="#7B2D8B" stroke="#F0F5F0" stroke-width="1.5"/>
+  <circle cx="50" cy="17" r="1.4" fill="#FFF"/>
+  <circle cx="14" cy="20" r="1.4" fill="#FFF"/>
+</svg>

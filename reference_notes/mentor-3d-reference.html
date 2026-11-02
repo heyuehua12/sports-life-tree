@@ -1,0 +1,2514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>生命树三维结果 v3.5 · NRLab Tools</title>
+<link rel="stylesheet" href="/css/nrlab-site-chrome.css"/>
+<style>
+  html, body { margin: 0; height: 100%; font-family: "PingFang SC", "Noto Sans SC", sans-serif; background: #0f1218; color: #e8e6e3; }
+  #ui { position: absolute; z-index: 2; left: 12px; top: 12px; width: min(400px, calc(100% - 24px)); background: rgba(20,24,32,.9); border: 1px solid #2a3140; border-radius: 10px; padding: 12px 14px; max-height: 42vh; overflow: auto; }
+  h1 { font-size: 1.05rem; margin: 0 0 6px; }
+  .hint { font-size: .78rem; color: #9aa3b2; line-height: 1.45; margin: 0 0 8px; }
+  textarea { width: 100%; height: 64px; box-sizing: border-box; font-size: 11px; background: #12161f; color: #d7dde8; border: 1px solid #2a3140; border-radius: 6px; padding: 8px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  button { border: 0; border-radius: 6px; padding: .5rem .85rem; font-weight: 600; cursor: pointer; background: #7B2D8B; color: #fff; font-size: .85rem; }
+  button.secondary { background: #2D8B4A; }
+  button.ghost { background: #2a3140; color: #d7dde8; }
+  button.traj { min-width: 4.6rem; transition: transform .15s, box-shadow .15s, opacity .15s, background .15s; }
+  button.traj.is-on { box-shadow: 0 0 0 2px #F2C94C, 0 0 14px rgba(242,201,76,.35); transform: translateY(-1px); opacity: 1; }
+  button.traj.is-dim { opacity: .42; }
+  #err { color: #e08a8a; font-size: .78rem; min-height: 1rem; margin-top: 6px; }
+  #c { position: absolute; inset: 0; cursor: grab; }
+  #c.picking { cursor: pointer; }
+  .legend { font-size: .72rem; color: #9aa3b2; margin-top: 6px; }
+  .legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  #axisbar {
+    position: absolute; z-index: 2; left: 12px; right: 12px; bottom: 12px;
+    background: rgba(20,24,32,.92); border: 1px solid #2a3140; border-radius: 10px;
+    padding: 10px 14px; font-size: .76rem; color: #c9d0dc; line-height: 1.45;
+  }
+  #axisbar strong { color: #e8e6e3; }
+  #axisbar code { color: #F2C94C; font-size: .72rem; }
+  #anno {
+    position: absolute; z-index: 3; top: 12px; right: 12px; width: min(380px, calc(100% - 24px));
+    max-height: calc(100% - 120px); overflow: auto;
+    background: rgba(16,20,28,.95); border: 1px solid #2a3140; border-radius: 10px;
+    padding: 12px 14px; display: none; font-size: .78rem; line-height: 1.4;
+  }
+  #anno.open { display: block; }
+  #anno h2 { font-size: .95rem; margin: 0 0 8px; }
+  #anno .close { float: right; background: #2a3140; padding: .25rem .55rem; font-size: .75rem; }
+  #anno .layer { margin: 8px 0; padding: 8px; border-radius: 8px; border-left: 4px solid #666; background: #12161f; }
+  #anno .layer h3 { margin: 0 0 4px; font-size: .8rem; }
+  #anno .kv { display: grid; grid-template-columns: 7.2rem 1fr; gap: 2px 8px; }
+  #anno .k { color: #9aa3b2; }
+  #anno .v { color: #e8e6e3; word-break: break-all; }
+  .Lq { border-left-color: #6B8FCE; }
+  .Lf1 { border-left-color: #C8A8D0; }
+  .Lf2 { border-left-color: #7B9E87; }
+  .Lf3 { border-left-color: #5B8DEF; }
+  .Lf4 { border-left-color: #E0A050; }
+  .Lf5 { border-left-color: #ADB5BD; }
+  .Lf6 { border-left-color: #2D8B4A; }
+  .Lpred { border-left-color: #F2C94C; }
+  .chip { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: .7rem; margin-right: 4px; background: #2a3140; }
+  details.adv { margin-top: 8px; border-top: 1px solid #2a3140; padding-top: 6px; }
+  details.adv summary { cursor: pointer; color: #9aa3b2; font-size: .75rem; user-select: none; }
+  details.adv[open] summary { margin-bottom: 6px; color: #c9d0dc; }
+  #anno .oneliner { margin: 0 0 8px; padding: 6px 8px; border-radius: 6px; background: #1a2030; color: #F2C94C; font-size: .8rem; }
+  @media (max-width: 720px) {
+    #ui {
+      left: 8px; right: 8px; top: auto; bottom: 0; width: auto;
+      max-height: 38vh; border-radius: 12px 12px 0 0;
+      padding: 10px 12px 14px;
+    }
+    #ui h1 { font-size: .95rem; }
+    #ui .hint { display: none; }
+    #ui details.adv { display: none; }
+    #anno {
+      top: 8px; left: 8px; right: 8px; width: auto;
+      max-height: 42vh;
+    }
+    #axisbar { display: none; }
+    button { padding: .45rem .7rem; font-size: .8rem; }
+    button.traj { min-width: 3.8rem; }
+  }
+</style>
+<style>
+  /* offset 3D chrome under unified site nav + tools crumb */
+  body.nrlab-viz { padding-top: 0; }
+  body.nrlab-viz .nrlab-site-nav { background: rgba(255,255,255,.96); }
+  body.nrlab-viz .nrlab-tools-crumb { background: rgba(15,18,24,.96); border-bottom: 1px solid #2a3140; }
+  body.nrlab-viz .nrlab-tools-crumb a { background: #1a2030; color: #c9d0dc; }
+  body.nrlab-viz .nrlab-tools-crumb a.is-on { background: #2a3140; color: #F2C94C; }
+  body.nrlab-viz .nrlab-tools-crumb .sep { color: #5a6578; }
+  body.nrlab-viz #c { top: 102px; }
+  body.nrlab-viz #ui { top: 114px; }
+  body.nrlab-viz #anno { top: 114px; }
+  @media (max-width: 720px) {
+    body.nrlab-viz #c { top: 102px; }
+    body.nrlab-viz #ui { top: auto; }
+    body.nrlab-viz #anno { top: 114px; }
+  }
+</style>
+</head>
+<body class="nrlab-viz">
+<div id="nrlab-site-nav" data-active="tools" data-tools-crumb="life-tree-viz"></div>
+<script src="/js/nrlab-site-nav.js" defer></script>
+<div id="ui">
+  <h1>生命树 · 结果查看 <span style="font-size:.75rem;color:#9aa3b2;font-weight:500">v3.5</span></h1>
+  <p class="hint">默认立体·自 θ=0° 看（<strong>左不好 / 右好事</strong>），地面有 2D 投影。点「轨迹 1–4」看注释。数据仅本机。</p>
+  <p class="hint" style="margin-top:-4px">
+    <a href="/tools/life-tree" style="color:#9aa3b2">← 测量说明</a>
+    · <a href="/tools/" style="color:#9aa3b2">Tools</a>
+  </p>
+  <div class="row" id="event-chips" style="margin-top:6px"></div>
+  <div class="row">
+    <button type="button" class="secondary" id="btn-four">四条典型</button>
+    <button type="button" class="ghost" id="btn-view-2d">地面 2D</button>
+    <button type="button" class="secondary" id="btn-view-3d">立体</button>
+    <button type="button" class="ghost" id="btn-reset-cam" title="回到左负右正">复位 θ=0°</button>
+    <button type="button" class="ghost" id="btn-floor-toggle">投影开</button>
+  </div>
+  <p class="legend"><span style="background:#7B2D8B"></span>好事　<span style="background:#2D8B4A"></span>不好的事　· 点选开注释</p>
+  <div id="err"></div>
+  <details class="adv">
+    <summary>导入 / 高级</summary>
+    <textarea id="json" placeholder='{"events":[...], "age_now":25}' style="height:48px;margin-top:4px"></textarea>
+    <input type="file" id="fileInput" accept=".json,.txt,.csv,application/json,text/plain,text/csv" style="display:none"/>
+    <div class="row">
+      <button type="button" id="btn-render">渲染</button>
+      <button type="button" class="secondary" id="btn-file">导入文件</button>
+      <button type="button" class="ghost" id="btn-sample">预试10条</button>
+      <button type="button" class="ghost" id="btn-clear">清空</button>
+    </div>
+  </details>
+</div>
+<div id="anno">
+  <button type="button" class="close" id="anno-close">关闭</button>
+  <h2 id="anno-title">事件</h2>
+  <div id="anno-body"></div>
+</div>
+<div id="c"></div>
+<div id="axisbar">
+  <strong>立体</strong>（默认·θ=0°）：左不好 / 右好事 · 竖=年龄 · 空中=轨迹曲线。
+  <strong>底板</strong>：二维「起点圆 + 箭头」（then→now），不是立体管。
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const POS = 0x7B2D8B, NEG = 0x2D8B4A;
+const errEl = document.getElementById("err");
+const host = document.getElementById("c");
+const annoEl = document.getElementById("anno");
+const annoBody = document.getElementById("anno-body");
+const annoTitle = document.getElementById("anno-title");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f1218);
+/** floor2d = 地面俯视二维；stereo = 立体树（默认） */
+let viewMode = "stereo";
+let lastPayload = null;
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+/** 默认站在 θ=0°（低中心性）一侧：左负右正 */
+camera.position.set(12, 5.2, 0);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+host.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 4.2, 0);
+controls.enableRotate = true;
+controls.enablePan = true;
+controls.update();
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+dir.position.set(5, 12, 7);
+scene.add(dir);
+
+let treeGroup = new THREE.Group();
+scene.add(treeGroup);
+const highlightGroup = new THREE.Group();
+scene.add(highlightGroup);
+/** 底板二维投影层（可开关） */
+let floorProjGroup = null;
+let showFloorProj = true;
+let lastTrunkH = 8;
+/** @type {Map<number|string, object>} */
+const eventById = new Map();
+/** @type {Map<number|string, {p0:THREE.Vector3,p1:THREE.Vector3,mid:THREE.Vector3,theta:number,color:number}>} */
+const trajMeta = new Map();
+/** @type {THREE.Sprite[]} */
+let ageLabSprites = [];
+/** @type {THREE.Object3D[]} */
+let pickables = [];
+let selectedId = null;
+/** 镜头缓动：选中轨迹时巡航到该扇区 */
+let camAnim = null;
+/** 合成向量 +1 年外推注释数据 */
+let compositeForecast = null;
+const PREDICT_YEARS = 1;
+const COMPOSITE_ID = "composite";
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+function resize() {
+  const w = host.clientWidth, h = host.clientHeight;
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+window.addEventListener("resize", resize);
+resize();
+
+function disposeObject(o) {
+  o.traverse((c) => {
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) {
+      if (Array.isArray(c.material)) c.material.forEach((m) => m.dispose());
+      else c.material.dispose();
+    }
+  });
+}
+
+function clearHighlightExtras() {
+  while (highlightGroup.children.length) {
+    const o = highlightGroup.children.pop();
+    disposeObject(o);
+  }
+}
+
+function clearTree() {
+  while (treeGroup.children.length) {
+    const o = treeGroup.children.pop();
+    disposeObject(o);
+  }
+  clearHighlightExtras();
+  floorProjGroup = null;
+  trajMeta.clear();
+  ageLabSprites = [];
+  pickables = [];
+  eventById.clear();
+  selectedId = null;
+  camAnim = null;
+  compositeForecast = null;
+  annoEl.classList.remove("open");
+}
+
+function ensureFloorProjGroup() {
+  if (!floorProjGroup || !floorProjGroup.parent) {
+    floorProjGroup = new THREE.Group();
+    floorProjGroup.name = "floorProj";
+    treeGroup.add(floorProjGroup);
+  }
+  floorProjGroup.visible = showFloorProj;
+  return floorProjGroup;
+}
+
+const R_SCALE = 4.8;
+function radiusFromR(r) {
+  const rr = Math.max(0.05, Math.min(1, Number(r) || 0.5));
+  return (0.06 + 0.94 * (rr * rr)) * R_SCALE;
+}
+function tubeRadFromR(r) {
+  const rr = Math.max(0.05, Math.min(1, Number(r) || 0.5));
+  return 0.025 + 0.14 * (rr * rr);
+}
+
+/**
+ * 极坐标 → 地面 xz。
+ * z = −R·sin(θ)：站在 θ=0°（+X）看向树时，左=负θ（不好）、右=正θ（好事）。
+ */
+function polarXZ(R, theta) {
+  return {
+    x: R * Math.cos(theta),
+    z: -R * Math.sin(theta),
+  };
+}
+
+function ageToY(age, ageLo, ageHi, trunkH, clamp = true) {
+  const t = (Number(age) - ageLo) / Math.max(0.5, ageHi - ageLo);
+  const tc = clamp ? Math.max(0, Math.min(1, t)) : t;
+  return tc * trunkH;
+}
+
+/** 显示半径 → 影响 r（逆 radiusFromR） */
+function rFromRadius(R) {
+  const u = Math.max(0, (Number(R) / R_SCALE - 0.06) / 0.94);
+  return Math.sqrt(Math.min(1, u));
+}
+
+function threeToPolar(p, ageLo, ageHi, trunkH) {
+  const R = Math.hypot(p.x, p.z);
+  const r = rFromRadius(R);
+  const theta = Math.atan2(-p.z, p.x); // 与 polarXZ 互逆
+  const age = ageLo + (p.y / Math.max(1e-6, trunkH)) * (ageHi - ageLo);
+  return {
+    r: Math.round(r * 1000) / 1000,
+    theta: Math.round(theta * 1000) / 1000,
+    deg: Math.round(theta * 180 / Math.PI),
+    age: Math.round(age * 100) / 100,
+    R: Math.round(R * 100) / 100,
+  };
+}
+
+function makeTextSprite(text, fill) {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 64;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, 256, 64);
+  ctx.fillStyle = fill || "#c9d0dc";
+  ctx.font = "bold 28px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(text, 128, 42);
+  const tex = new THREE.CanvasTexture(c);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  s.scale.set(1.2, 0.3, 1);
+  return s;
+}
+
+function buildTrunk(ageLo, ageHi) {
+  const h = Math.max(5.5, (ageHi - ageLo) * 0.55);
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.26, h, 16),
+    new THREE.MeshStandardMaterial({ color: 0x8a6d4b, roughness: 0.7, metalness: 0.05 })
+  );
+  mesh.position.y = h / 2;
+  treeGroup.add(mesh);
+  const ring = new THREE.Mesh(
+    new THREE.CircleGeometry(R_SCALE + 0.5, 48),
+    new THREE.MeshStandardMaterial({ color: 0x1a2030, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  treeGroup.add(ring);
+  const lo = Math.floor(ageLo), hi = Math.ceil(ageHi);
+  for (let a = lo; a <= hi; a += 1) {
+    const y = ageToY(a, ageLo, ageHi, h);
+    const tick = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.03, 0.03),
+      new THREE.MeshBasicMaterial({ color: a % 2 === 0 ? 0xc9d0dc : 0x5a6578 })
+    );
+    tick.position.set(0.42, y, 0);
+    treeGroup.add(tick);
+    if (a % 2 === 0 || a === lo || a === hi) {
+      const spr = makeTextSprite(String(a) + "岁", a === hi ? "#F2C94C" : "#c9d0dc");
+      spr.position.set(0.95, y, 0);
+      spr.scale.set(0.9, 0.28, 1);
+      treeGroup.add(spr);
+    }
+  }
+  const tip = makeTextSprite("轴顶 " + hi + "岁（含+1预测）", "#F2C94C");
+  tip.position.set(-0.2, h + 0.35, 0);
+  tip.scale.set(1.8, 0.35, 1);
+  treeGroup.add(tip);
+  return h;
+}
+
+/** 底板：负/正半区色 + 距离环 + θ 标注（默认视角：左负右正） */
+function addPolarFloorGuides() {
+  const floorR = R_SCALE + 0.35;
+  // 半盘：θ∈[0,+π]→右好事，θ∈[−π,0]→左不好（与 polarXZ / 默认相机一致）
+  function addValenceHalf(signPos) {
+    const n = 36;
+    const positions = [0, 0.021, 0];
+    for (let i = 0; i <= n; i++) {
+      const a = signPos ? (i / n) * Math.PI : -(i / n) * Math.PI;
+      const xz = polarXZ(floorR, a);
+      positions.push(xz.x, 0.021, xz.z);
+    }
+    const idx = [];
+    for (let i = 1; i <= n; i++) idx.push(0, i, i + 1);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(
+      geo,
+      new THREE.MeshBasicMaterial({
+        color: signPos ? POS : NEG,
+        transparent: true,
+        opacity: 0.18,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    treeGroup.add(mesh);
+  }
+  addValenceHalf(false); // 左 · 不好
+  addValenceHalf(true);  // 右 · 好事
+
+  const rTicks = [0.25, 0.5, 0.75, 1.0];
+  rTicks.forEach((rv) => {
+    const R = radiusFromR(rv);
+    const pts = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2 - Math.PI;
+      const xz = polarXZ(R, a);
+      pts.push(new THREE.Vector3(xz.x, 0.028, xz.z));
+    }
+    treeGroup.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: rv === 1 ? 0x6a7588 : 0x3a4558 })
+    ));
+    const lab = makeTextSprite("r=" + rv, "#F2C94C");
+    lab.position.set(R + 0.15, 0.12, 0);
+    lab.scale.set(0.85, 0.26, 1);
+    treeGroup.add(lab);
+  });
+
+  // 分界线：θ=0（前）与 θ=±π（后）
+  const midLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-floorR, 0.035, 0),
+      new THREE.Vector3(floorR, 0.035, 0),
+    ]),
+    new THREE.LineBasicMaterial({ color: 0xF2C94C })
+  );
+  treeGroup.add(midLine);
+
+  const spokes = [
+    [0, "θ=0° 低中心性"],
+    [Math.PI / 2, "右 · 好事"],
+    [Math.PI, "±180° 高中心性"],
+    [-Math.PI / 2, "左 · 不好"],
+  ];
+  spokes.forEach(([a, lab]) => {
+    const xz = polarXZ(R_SCALE, a);
+    const p1 = new THREE.Vector3(xz.x, 0.03, xz.z);
+    const col = a > 0.01 ? POS : (a < -0.01 ? NEG : 0xF2C94C);
+    treeGroup.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.03, 0), p1]),
+      new THREE.LineBasicMaterial({ color: col })
+    ));
+    const spr = makeTextSprite(lab, a > 0.01 ? "#C8A8D0" : (a < -0.01 ? "#8FCB9B" : "#F2C94C"));
+    spr.position.set(xz.x * 1.18, 0.2, xz.z * 1.18);
+    spr.scale.set(1.45, 0.34, 1);
+    treeGroup.add(spr);
+  });
+  const title = makeTextSprite("距离=影响 r · 半区=效价", "#F2C94C");
+  title.position.set(0, 0.22, -(R_SCALE + 0.9));
+  title.scale.set(2.2, 0.4, 1);
+  treeGroup.add(title);
+}
+
+function eventTheta(ev) {
+  const sign = (ev && ev.valence >= 0) ? 1 : -1;
+  if (ev && ev.centrality != null && Number.isFinite(Number(ev.centrality))) {
+    return sign * Math.max(0, Math.min(1, Number(ev.centrality))) * Math.PI;
+  }
+  if (ev && ev.theta != null && Number.isFinite(Number(ev.theta))) return Number(ev.theta);
+  const w = ev && ev.obj_w != null ? Math.max(0, Math.min(1, Number(ev.obj_w))) : 0.5;
+  return sign * w * Math.PI;
+}
+
+function polarToThree(r, theta, age, ageLo, ageHi, trunkH) {
+  const R = radiusFromR(r);
+  const xz = polarXZ(R, theta);
+  let y = ageToY(age, ageLo, ageHi, trunkH);
+  if (viewMode === "floor2d") {
+    // 压到地面：年龄只做极小分层，读成 r–θ 二维箭头
+    const t = (Number(age) - ageLo) / Math.max(0.5, ageHi - ageLo);
+    y = 0.06 + 0.05 * Math.max(0, Math.min(1, t));
+  }
+  return new THREE.Vector3(xz.x, y, xz.z);
+}
+
+function trajPoints(ev, ageLo, ageHi, trunkH, ageNow) {
+  const th = eventTheta(ev);
+  const a0 = ev.age_start != null ? Number(ev.age_start) : ageLo;
+  // 未写结束岁 → 落到「现在」，不要落到轴顶（轴顶含 +1 预测）
+  const a1 = ev.age_end != null ? Number(ev.age_end) : (ageNow != null ? ageNow : ageHi);
+  return [
+    polarToThree(ev.r_then != null ? ev.r_then : 0.5, th, a0, ageLo, ageHi, trunkH),
+    polarToThree(ev.r_now != null ? ev.r_now : 0.5, th, a1, ageLo, ageHi, trunkH),
+    th, a0, a1,
+  ];
+}
+
+/**
+ * 无 path_ar 时，用 then→(mid)→now 合成曲线（非直线）。
+ * 锚点间用 smoothstep 插值；有 mid 则分段。
+ */
+function synthPathAR(ev, ageNow) {
+  const a0 = ev.age_start != null ? Number(ev.age_start) : 10;
+  let a1 = ev.age_end != null ? Number(ev.age_end) : (ageNow != null ? Number(ageNow) : a0 + 8);
+  if (a1 <= a0) a1 = a0 + 1;
+  const r0 = Math.max(0, Math.min(1, Number(ev.r_then != null ? ev.r_then : 0.5)));
+  const r1 = Math.max(0, Math.min(1, Number(ev.r_now != null ? ev.r_now : 0.5)));
+  const hasMid = ev.age_mid != null && ev.r_mid != null
+    && Number(ev.age_mid) > a0 && Number(ev.age_mid) < a1;
+  const anchors = hasMid
+    ? [[a0, r0], [Number(ev.age_mid), Math.max(0, Math.min(1, Number(ev.r_mid)))], [a1, r1]]
+    : [[a0, r0], [a1, r1]];
+  // 无 mid 时加一处缓弯，避免 then–now 直线
+  if (!hasMid) {
+    const am = a0 + (a1 - a0) * 0.45;
+    const rm = r0 + (r1 - r0) * 0.45 + (r1 >= r0 ? 0.08 : -0.08) * Math.min(1, Math.abs(r1 - r0) + 0.35);
+    anchors.splice(1, 0, [am, Math.max(0, Math.min(1, rm))]);
+  }
+  const n = 28;
+  const out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const age = a0 + (a1 - a0) * t;
+    // 在锚点段内插值
+    let r = r0;
+    for (let k = 0; k < anchors.length - 1; k++) {
+      const [aa, ra] = anchors[k];
+      const [ab, rb] = anchors[k + 1];
+      if (age <= ab || k === anchors.length - 2) {
+        const u = (age - aa) / Math.max(1e-6, ab - aa);
+        const s = u * u * (3 - 2 * u); // smoothstep
+        r = ra + (rb - ra) * Math.max(0, Math.min(1, s));
+        break;
+      }
+    }
+    out.push([Math.round(age * 100) / 100, Math.round(r * 1000) / 1000]);
+  }
+  return out;
+}
+
+/** path_ar: [[age,r],…] → 三维轨迹点（θ 固定）；缺省则合成曲线 */
+function pathARPoints(ev, ageLo, ageHi, trunkH, ageNow) {
+  const th = eventTheta(ev);
+  let raw = Array.isArray(ev.path_ar) ? ev.path_ar : null;
+  if (!raw || raw.length < 2) raw = synthPathAR(ev, ageNow);
+  const pts = [];
+  const rs = [];
+  for (let i = 0; i < raw.length; i++) {
+    const pair = raw[i];
+    if (!pair || pair.length < 2) continue;
+    let age = Number(pair[0]);
+    let r = Number(pair[1]);
+    if (!Number.isFinite(age) || !Number.isFinite(r)) continue;
+    if (ageNow != null && age > ageNow) age = ageNow;
+    r = Math.max(0, Math.min(1, Math.abs(r))); // 可视化用 |r|
+    pts.push(polarToThree(r, th, age, ageLo, ageHi, trunkH));
+    rs.push(r);
+  }
+  if (pts.length < 2) return null;
+  return { pts, rs, th };
+}
+
+function tagPickable(obj, eventId) {
+  obj.userData.eventId = eventId;
+  obj.userData.pickable = true;
+  pickables.push(obj);
+}
+
+function addCylinderSeg(a, b, radA, radB, color, eventId) {
+  const dirV = new THREE.Vector3().subVectors(b, a);
+  const len = dirV.length();
+  if (len < 1e-5) return;
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(radB, radA, len, 10, 1, false),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.18 })
+  );
+  mesh.position.copy(a).add(b).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirV.clone().normalize());
+  if (eventId != null) tagPickable(mesh, eventId);
+  treeGroup.add(mesh);
+}
+
+/** 映射表：统计 F0–F20（与 README §2.1 一致） */
+function deriveF(ev) {
+  const r0 = ev.r_then != null ? Number(ev.r_then) : null;
+  const r1 = ev.r_now != null ? Number(ev.r_now) : null;
+  const delta = (r0 != null && r1 != null) ? Math.round((r1 - r0) * 1000) / 1000 : (ev.impact_delta != null ? Number(ev.impact_delta) : null);
+  let delta_dir = ev.delta_dir || null;
+  if (!delta_dir && delta != null) {
+    if (delta >= 0.25) delta_dir = "up";
+    else if (delta <= -0.25) delta_dir = "down";
+    else delta_dir = "flat";
+  }
+  const th = eventTheta(ev);
+  const focal = ev.is_focal_now != null
+    ? !!ev.is_focal_now
+    : (ev.now_salience != null && Number(ev.now_salience) >= 0.7);
+  return {
+    F0_where_eco: ev.where_eco != null ? ev.where_eco : null,
+    F1_centrality: ev.centrality != null ? Number(ev.centrality) : null,
+    F2_control_w: ev.control_w != null ? Number(ev.control_w) : null,
+    F3_who_tie: ev.who_tie != null ? Number(ev.who_tie) : null,
+    F4_closeness: ev.closeness != null ? Number(ev.closeness) : null,
+    F5_turn_w: ev.turn_w != null ? Number(ev.turn_w) : null,
+    F6_ongoing: ev.ongoing != null ? !!ev.ongoing : null,
+    F7_mid_kind: ev.mid_kind != null ? ev.mid_kind : null,
+    F8_age_mid: ev.age_mid != null ? Number(ev.age_mid) : null,
+    F9_r_mid: ev.r_mid != null ? Number(ev.r_mid) : null,
+    F10_impact_delta: delta,
+    F11_obj_raw: ev.obj_raw != null ? Number(ev.obj_raw) : null,
+    F12_obj_w: ev.obj_w != null ? Number(ev.obj_w) : null,
+    F13_r_then: r0,
+    F14_r_now: r1,
+    F15_age_start: ev.age_start != null ? Number(ev.age_start) : null,
+    F16_age_end: ev.age_end != null ? Number(ev.age_end) : null,
+    F17_now_salience: ev.now_salience != null ? Number(ev.now_salience) : null,
+    F18_theta: Math.round(th * 1000) / 1000,
+    F19_is_focal_now: focal,
+    F20_delta_dir: delta_dir,
+  };
+}
+
+function fmt(v) {
+  if (v == null || v === "") return "—";
+  if (typeof v === "boolean") return v ? "true" : "false";
+  if (typeof v === "number") return Number.isInteger(v) ? String(v) : String(Math.round(v * 1000) / 1000);
+  return String(v);
+}
+
+function layerBlock(cls, title, rows) {
+  const kv = rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${fmt(v)}</div>`).join("");
+  return `<div class="layer ${cls}"><h3>${title}</h3><div class="kv">${kv}</div></div>`;
+}
+
+function showAnno(ev) {
+  if (ev && ev.kind === "composite") {
+    showCompositeAnno(ev);
+    return;
+  }
+  const F = deriveF(ev);
+  const side = ev.valence >= 0 ? "好事" : "不好的事";
+  const dirWord = F.F20_delta_dir === "down" ? "衰减"
+    : F.F20_delta_dir === "up" ? "加重" : "平稳";
+  const a0 = F.F15_age_start != null ? F.F15_age_start : "—";
+  const a1 = F.F16_age_end != null ? F.F16_age_end : "今";
+  annoTitle.textContent = `${side} · ${ev.item_key || "(未命名)"}`;
+  const deg = Math.round(F.F18_theta * 180 / Math.PI);
+  annoBody.innerHTML =
+    `<p class="oneliner">${side} · ${dirWord} · ${a0}→${a1}岁</p>` +
+    layerBlock("Lq", "测量 Q1–Q8（原答）", [
+      ["域 / 效价", `${ev.domain || "—"} / ${ev.valence}`],
+      ["Q1 where", ev.where],
+      ["Q2 who", ev.who],
+      ["Q3 why", ev.why],
+      ["Q4 how", ev.how],
+      ["Q5 now_salience", ev.now_salience],
+      ["Q6 centrality（故事核心≠影响）", ev.centrality],
+      ["Q7 closeness", ev.closeness],
+      ["Q8 mid_kind", ev.mid_kind],
+      ["Q8 age_mid / r_mid", `${fmt(ev.age_mid)} / ${fmt(ev.r_mid)}`],
+    ]) +
+    layerBlock("Lf1", "F1 · 构念1 中心性", [
+      ["F1 centrality", F.F1_centrality],
+      ["F18 theta (rad / °)", `${fmt(F.F18_theta)} / ${deg}°`],
+    ]) +
+    layerBlock("Lf2", "F2 · 构念2 可控感", [
+      ["F2 control_w", F.F2_control_w],
+    ]) +
+    layerBlock("Lf3", "F3–F4 · 构念3 人际", [
+      ["F3 who_tie", F.F3_who_tie],
+      ["F4 closeness", F.F4_closeness],
+    ]) +
+    layerBlock("Lf4", "F5–F10 · 构念4 转折", [
+      ["F5 turn_w", F.F5_turn_w],
+      ["F6 ongoing", F.F6_ongoing],
+      ["F7 mid_kind", F.F7_mid_kind],
+      ["F8 age_mid", F.F8_age_mid],
+      ["F9 r_mid", F.F9_r_mid],
+      ["F10 impact_delta", F.F10_impact_delta],
+    ]) +
+    layerBlock("Lf5", "F11–F12 · 构念5 客观常模", [
+      ["F11 obj_raw", F.F11_obj_raw],
+      ["F12 obj_w", F.F12_obj_w],
+    ]) +
+    layerBlock("Lf6", "F13–F20 · 构念6 影响轨迹", [
+      ["F13 r_then", F.F13_r_then],
+      ["F14 r_now", F.F14_r_now],
+      ["F15 age_start", F.F15_age_start],
+      ["F16 age_end", F.F16_age_end],
+      ["F17 now_salience", F.F17_now_salience],
+      ["F18 theta", F.F18_theta],
+      ["F19 is_focal_now", F.F19_is_focal_now],
+      ["F20 delta_dir", F.F20_delta_dir],
+      ["F0 where_eco", F.F0_where_eco],
+    ]);
+  annoEl.classList.add("open");
+}
+
+function addDashedDrop(from, to, color) {
+  const geo = new THREE.BufferGeometry().setFromPoints([from, to]);
+  const line = new THREE.Line(
+    geo,
+    new THREE.LineDashedMaterial({
+      color: color != null ? color : 0xF2C94C,
+      dashSize: 0.14,
+      gapSize: 0.1,
+      transparent: true,
+      opacity: 0.9,
+    })
+  );
+  line.computeLineDistances();
+  highlightGroup.add(line);
+}
+
+function setHighlight(eventId) {
+  selectedId = eventId;
+  clearHighlightExtras();
+  pickables.forEach((m) => {
+    if (!m.material || !m.material.emissive) return;
+    const on = m.userData.eventId === eventId;
+    m.material.emissiveIntensity = on ? 0.55 : 0.18;
+    if (m.material.opacity == null) return;
+    m.material.transparent = true;
+    if (eventId == null) {
+      m.material.opacity = m.userData.baseOpacity != null ? m.userData.baseOpacity : 1;
+    } else if (on) {
+      m.material.opacity = 1;
+    } else {
+      m.material.opacity = 0.3;
+    }
+  });
+  // 选中：空中点 → 底板垂足虚线 + 镜头巡航 + 年龄浮标聚焦
+  if (eventId != null && trajMeta.has(eventId)) {
+    const meta = trajMeta.get(eventId);
+    const col = meta.color != null ? meta.color : 0xF2C94C;
+    [meta.p0, meta.mid, meta.p1].forEach((p) => {
+      if (!p) return;
+      const floor = new THREE.Vector3(p.x, 0.09, p.z);
+      if (Math.abs(p.y - floor.y) > 0.15) addDashedDrop(p.clone(), floor, col);
+    });
+    cruiseToEvent(eventId);
+  }
+  syncAgeLabs(eventId);
+  syncTrajButtons(eventId);
+}
+
+function addTrajectory(ev, ageLo, ageHi, trunkH, ageNow) {
+  const id = ev.event_id != null ? ev.event_id : eventById.size + 1;
+  ev.event_id = id;
+  eventById.set(id, ev);
+  const color = ev.valence >= 0 ? POS : NEG;
+  const [pEnd0, pEnd1, th] = trajPoints(ev, ageLo, ageHi, trunkH, ageNow);
+  const r0 = ev.r_then != null ? Number(ev.r_then) : 0.5;
+  const r1 = ev.r_now != null ? Number(ev.r_now) : 0.5;
+
+  // 一律轨迹：path_ar 或 then→mid→now 合成曲线（不再 then→now 直线）
+  const path = pathARPoints(ev, ageLo, ageHi, trunkH, ageNow);
+  const pts = path ? path.pts : [pEnd0, pEnd1];
+  const rs = path ? path.rs : [r0, r1];
+  const thPath = path ? path.th : th;
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    addCylinderSeg(
+      pts[i], pts[i + 1],
+      tubeRadFromR(rs[i]), tubeRadFromR(rs[i + 1]),
+      color, id
+    );
+  }
+  const p0 = pts[0];
+  const p1 = pts[pts.length - 1];
+  const rr0 = rs[0];
+  const rr1 = rs[rs.length - 1];
+  const s0 = new THREE.Mesh(
+    new THREE.SphereGeometry(tubeRadFromR(rr0) * 1.35, 14, 14),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.18 })
+  );
+  s0.position.copy(p0);
+  tagPickable(s0, id);
+  treeGroup.add(s0);
+  const s1 = new THREE.Mesh(
+    new THREE.SphereGeometry(tubeRadFromR(rr1) * 1.45, 14, 14),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.18 })
+  );
+  s1.position.copy(p1);
+  tagPickable(s1, id);
+  treeGroup.add(s1);
+  const midI = Math.max(1, Math.floor((pts.length - 1) * 0.5));
+  const midPt = pts[midI];
+  // 中段方向箭头：圆柱箭杆+锥头，粗细跟轨迹管一致（不用 ArrowHelper 细线）
+  if (pts.length >= 2) {
+    const a = pts[Math.max(0, midI - 1)];
+    const b = pts[Math.min(pts.length - 1, midI + 1)] || pts[midI];
+    const dirV = new THREE.Vector3().subVectors(b, a);
+    if (dirV.lengthSq() > 1e-6) {
+      dirV.normalize();
+      const rMid = rs[midI] != null ? rs[midI] : rr1;
+      const shaftRad = Math.max(tubeRadFromR(rMid) * 1.25, 0.055);
+      const headLen = 0.36 + 0.2 * (rMid * rMid);
+      const shaftLen = headLen * 0.9;
+      const sA = midPt.clone().addScaledVector(dirV, -shaftLen * 0.5);
+      const sB = midPt.clone().addScaledVector(dirV, shaftLen * 0.5);
+      addCylinderSeg(sA, sB, shaftRad, shaftRad, color, id);
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(shaftRad * 2.4, headLen * 0.72, 14),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.22 })
+      );
+      cone.position.copy(sB).addScaledVector(dirV, headLen * 0.28);
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirV);
+      tagPickable(cone, id);
+      treeGroup.add(cone);
+    }
+  }
+  // 年龄浮标：起 / 中 / 止
+  const aStart = ev.age_start != null ? Number(ev.age_start) : null;
+  const aEnd = ev.age_end != null ? Number(ev.age_end) : (ageNow != null ? Number(ageNow) : null);
+  const aMid = ev.age_mid != null ? Number(ev.age_mid)
+    : (aStart != null && aEnd != null ? (aStart + aEnd) * 0.5 : null);
+  const labCol = ev.valence >= 0 ? "#C8A8D0" : "#8FCB9B";
+  function placeAgeLab(pt, age, scale) {
+    if (!pt || age == null || !Number.isFinite(age)) return;
+    const spr = makeTextSprite(Math.round(age * 10) / 10 + "岁", labCol);
+    const outward = new THREE.Vector3(pt.x, 0, pt.z);
+    if (outward.lengthSq() > 1e-6) outward.normalize();
+    else outward.set(1, 0, 0);
+    spr.position.copy(pt).addScaledVector(outward, 0.28).add(new THREE.Vector3(0, 0.22, 0));
+    spr.scale.set(scale || 0.95, 0.28, 1);
+    spr.userData.eventId = id;
+    spr.material.transparent = true;
+    ageLabSprites.push(spr);
+    treeGroup.add(spr);
+  }
+  placeAgeLab(p0, aStart, 1.0);
+  placeAgeLab(midPt, aMid, 0.85);
+  placeAgeLab(p1, aEnd, 1.0);
+
+  trajMeta.set(id, {
+    p0: p0.clone(),
+    p1: p1.clone(),
+    mid: midPt.clone(),
+    theta: thPath,
+    color: color,
+  });
+
+  // 地面二维投影：起点圆 + then→now 箭头（贴地，非立体管）
+  addFloor2DArrow(thPath, rr0, rr1, color, id);
+}
+
+/**
+ * 底板二维符号：起点实心圆 + 径向箭头（同 θ 上 r_then→r_now）。
+ * 一律贴地 y≈0.08，看起来是平面图，不是 3D 管子。
+ */
+function addFloor2DArrow(th, rThen, rNow, color, eventId) {
+  const g = ensureFloorProjGroup();
+  const y = 0.08;
+  const xz0 = polarXZ(radiusFromR(rThen), th);
+  const xz1 = polarXZ(radiusFromR(rNow), th);
+  const p0 = new THREE.Vector3(xz0.x, y, xz0.z);
+  const p1 = new THREE.Vector3(xz1.x, y, xz1.z);
+  const dir = new THREE.Vector3().subVectors(p1, p0);
+  const len = dir.length();
+
+  // 起点圆（贴地圆片）
+  const diskR = 0.11 + 0.1 * (rThen * rThen);
+  const disk = new THREE.Mesh(
+    new THREE.CircleGeometry(diskR, 28),
+    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: false })
+  );
+  disk.rotation.x = -Math.PI / 2;
+  disk.position.copy(p0);
+  tagPickable(disk, eventId);
+  g.add(disk);
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(diskR * 0.92, diskR * 1.08, 28),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(p0.x, y + 0.002, p0.z);
+  tagPickable(ring, eventId);
+  g.add(ring);
+
+  if (len < 1e-4) return;
+
+  dir.normalize();
+  const shaftStart = diskR * 0.55;
+  const shaftLen = Math.max(0.05, len - shaftStart);
+  const shaftW = 0.045 + 0.04 * Math.max(rThen, rNow);
+  const shaft = new THREE.Mesh(
+    new THREE.BoxGeometry(shaftW, 0.012, shaftLen),
+    new THREE.MeshBasicMaterial({ color })
+  );
+  const mid = p0.clone().addScaledVector(dir, shaftStart + shaftLen * 0.5);
+  shaft.position.copy(mid);
+  shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+  tagPickable(shaft, eventId);
+  g.add(shaft);
+
+  const headLen = 0.2 + 0.16 * (rNow * rNow);
+  const headW = 0.14 + 0.1 * (rNow * rNow);
+  const tip = p0.clone().addScaledVector(dir, shaftStart + shaftLen * 0.55);
+  const base = tip.clone().addScaledVector(dir, -headLen);
+  const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize().multiplyScalar(headW * 0.5);
+  const tri = new THREE.BufferGeometry();
+  tri.setAttribute("position", new THREE.Float32BufferAttribute([
+    tip.x, y + 0.004, tip.z,
+    base.x + side.x, y + 0.004, base.z + side.z,
+    base.x - side.x, y + 0.004, base.z - side.z,
+  ], 3));
+  tri.computeVertexNormals();
+  const head = new THREE.Mesh(
+    tri,
+    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: false })
+  );
+  tagPickable(head, eventId);
+  g.add(head);
+}
+
+const YELLOW = 0xF2C94C;
+const YELLOW_PRED = 0xE8B84A;
+
+function tagCompositePickable(obj) {
+  obj.userData.eventId = COMPOSITE_ID;
+  obj.userData.pickable = true;
+  pickables.push(obj);
+}
+
+/** 黄箭杆：任意三维方向；可挂合成向量点击 */
+function addYellowStick(from, to, opts) {
+  const o = opts || {};
+  const color = o.color != null ? o.color : YELLOW;
+  const rad = o.rad != null ? o.rad : 0.08;
+  const pick = !!o.pick;
+  const dir = new THREE.Vector3().subVectors(to, from);
+  const len = dir.length();
+  if (len < 0.05) return;
+  dir.normalize();
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(rad, rad, len, 10, 1, false),
+    new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: o.emissive != null ? o.emissive : 0.22,
+      transparent: !!o.transparent, opacity: o.opacity != null ? o.opacity : 1,
+    })
+  );
+  mesh.position.copy(from).add(to).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone());
+  if (o.opacity != null && o.opacity < 1) mesh.userData.baseOpacity = o.opacity;
+  if (pick) tagCompositePickable(mesh);
+  treeGroup.add(mesh);
+
+  const head = Math.min(0.42, Math.max(0.2, len * 0.2));
+  const arrEnd = new THREE.ArrowHelper(
+    dir, to.clone().addScaledVector(dir, -head * 0.85), head, color, head * 0.55, 0.18
+  );
+  const arrStart = new THREE.ArrowHelper(
+    dir, from.clone(), head * 0.7, color, head * 0.42, 0.13
+  );
+  if (pick) {
+    [arrEnd.cone, arrEnd.line, arrStart.cone, arrStart.line].forEach((p) => {
+      if (p) tagCompositePickable(p);
+    });
+  }
+  treeGroup.add(arrEnd);
+  treeGroup.add(arrStart);
+}
+
+function showCompositeAnno(fc) {
+  if (!fc) return;
+  annoTitle.textContent = `合成向量 · +${fc.horizon} 年外推预测`;
+  const t0 = fc.then, t1 = fc.now, tp = fc.pred;
+  annoBody.innerHTML =
+    layerBlock("Lpred", "线性外推（示意，非训练模型）", [
+      ["外推年数", `+${fc.horizon} 年`],
+      ["观测跨度（岁）", `${fmt(fc.age_then)} → ${fmt(fc.age_now)}（Δ=${fmt(fc.dt_age)}）`],
+      ["预测年龄", fmt(fc.age_pred)],
+      ["权重", "各事件 r_now²"],
+      ["方法", "均值 then→now 速度 × 1 年"],
+    ]) +
+    layerBlock("Lpred", "合成 then（观测起点）", [
+      ["age", t0.age],
+      ["r（影响）", t0.r],
+      ["θ / °", `${fmt(t0.theta)} / ${t0.deg}°`],
+    ]) +
+    layerBlock("Lpred", "合成 now（观测终点）", [
+      ["age", t1.age],
+      ["r（影响）", t1.r],
+      ["θ / °", `${fmt(t1.theta)} / ${t1.deg}°`],
+      ["Δr / 年", fmt(fc.dr_per_year)],
+    ]) +
+    layerBlock("Lpred", `+${fc.horizon} 年预测点`, [
+      ["age_pred", tp.age],
+      ["r_pred（预测影响）", tp.r],
+      ["θ_pred / °", `${fmt(tp.theta)} / ${tp.deg}°`],
+      ["相对现在 Δr", fmt(fc.delta_r_pred)],
+      ["方向解读", fc.dir_note],
+    ]) +
+    `<p class="hint" style="margin-top:8px">点其他轨迹可看单事件 Q1–Q8；本面板是人级合成外推。</p>`;
+  annoEl.classList.add("open");
+}
+
+/**
+ * 合成向量（r_now² 加权）+ 外推 PREDICT_YEARS：
+ * 空中 then→now（实）→ pred（稍淡）；地面同步投影
+ */
+function addCrownComposite(events, ageLo, ageNow, trunkAgeHi, trunkH) {
+  const pThen = new THREE.Vector3();
+  const pNow = new THREE.Vector3();
+  let wsum = 0;
+  let ageThenW = 0, ageNowW = 0;
+  events.forEach((ev) => {
+    const th = eventTheta(ev);
+    const r0 = Math.max(0.05, Math.min(1, Number(ev.r_then != null ? ev.r_then : 0.5)));
+    const r1 = Math.max(0.05, Math.min(1, Number(ev.r_now != null ? ev.r_now : 0.5)));
+    const w = r1 * r1;
+    const a0 = ev.age_start != null ? Number(ev.age_start) : ageLo;
+    const a1 = ev.age_end != null ? Number(ev.age_end) : ageNow;
+    // 用含预测的 trunk 轴映射，使 now 停在「现在」而非轴顶
+    const t0 = polarToThree(r0, th, a0, ageLo, trunkAgeHi, trunkH);
+    const t1 = polarToThree(r1, th, a1, ageLo, trunkAgeHi, trunkH);
+    pThen.addScaledVector(t0, w);
+    pNow.addScaledVector(t1, w);
+    ageThenW += w * a0;
+    ageNowW += w * a1;
+    wsum += w;
+  });
+  if (wsum < 1e-6) return;
+  pThen.multiplyScalar(1 / wsum);
+  pNow.multiplyScalar(1 / wsum);
+  const age_then = ageThenW / wsum;
+  const age_now = ageNowW / wsum;
+  const dt_age = Math.max(0.5, age_now - age_then);
+  const age_pred = age_now + PREDICT_YEARS;
+  // 速度（单位/岁）× 外推年数
+  const vel = new THREE.Vector3().subVectors(pNow, pThen).multiplyScalar(1 / dt_age);
+  const pPred = pNow.clone().addScaledVector(vel, PREDICT_YEARS);
+  // 若预测点 y 超出轴，仍画出（轴已含 +1）
+  if (pThen.distanceTo(pNow) < 0.05) return;
+
+  const polThen = threeToPolar(pThen, ageLo, trunkAgeHi, trunkH);
+  const polNow = threeToPolar(pNow, ageLo, trunkAgeHi, trunkH);
+  const polPred = threeToPolar(pPred, ageLo, trunkAgeHi, trunkH);
+  // 用加权年龄覆盖几何反演（更稳）
+  polThen.age = Math.round(age_then * 100) / 100;
+  polNow.age = Math.round(age_now * 100) / 100;
+  polPred.age = Math.round(age_pred * 100) / 100;
+  const dr_per_year = Math.round(((polNow.r - polThen.r) / dt_age) * 1000) / 1000;
+  const delta_r_pred = Math.round((polPred.r - polNow.r) * 1000) / 1000;
+  let dir_note = "影响大致持平";
+  if (delta_r_pred >= 0.08) dir_note = "预测影响上升";
+  else if (delta_r_pred <= -0.08) dir_note = "预测影响下降";
+
+  compositeForecast = {
+    kind: "composite",
+    horizon: PREDICT_YEARS,
+    age_then: polThen.age,
+    age_now: polNow.age,
+    age_pred: polPred.age,
+    dt_age: Math.round(dt_age * 100) / 100,
+    dr_per_year,
+    delta_r_pred,
+    dir_note,
+    then: polThen,
+    now: polNow,
+    pred: polPred,
+    n_events: events.length,
+  };
+  eventById.set(COMPOSITE_ID, compositeForecast);
+
+  // 观测段 then→now
+  addYellowStick(pThen, pNow, { pick: true, rad: 0.085, color: YELLOW });
+  // 外推段 now→pred（稍细、稍淡）
+  addYellowStick(pNow, pPred, {
+    pick: true, rad: 0.07, color: YELLOW_PRED, transparent: true, opacity: 0.85, emissive: 0.3,
+  });
+  // 预测端点球
+  const tipBall = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 14, 14),
+    new THREE.MeshStandardMaterial({ color: YELLOW, emissive: YELLOW, emissiveIntensity: 0.4 })
+  );
+  tipBall.position.copy(pPred);
+  tagCompositePickable(tipBall);
+  treeGroup.add(tipBall);
+
+  const labTop = makeTextSprite("合成 · +1年预测", "#F2C94C");
+  labTop.position.set(pPred.x, pPred.y + 0.45, pPred.z);
+  labTop.scale.set(1.7, 0.34, 1);
+  treeGroup.add(labTop);
+
+  // 地面投影：then → now → pred
+  const yFloor = 0.09;
+  const f0 = new THREE.Vector3(pThen.x, yFloor, pThen.z);
+  const f1 = new THREE.Vector3(pNow.x, yFloor, pNow.z);
+  const f2 = new THREE.Vector3(pPred.x, yFloor, pPred.z);
+  if (f0.distanceTo(f1) >= 0.04) addYellowStick(f0, f1, { pick: true, rad: 0.06, color: YELLOW });
+  if (f1.distanceTo(f2) >= 0.04) {
+    addYellowStick(f1, f2, {
+      pick: true, rad: 0.055, color: YELLOW_PRED, transparent: true, opacity: 0.85, emissive: 0.28,
+    });
+  }
+  const labFloor = makeTextSprite("合成投影 · +1年", "#F2C94C");
+  labFloor.position.set(f2.x * 0.7 + f1.x * 0.3, yFloor + 0.28, f2.z * 0.7 + f1.z * 0.3);
+  labFloor.scale.set(1.7, 0.32, 1);
+  treeGroup.add(labFloor);
+}
+
+function ageSpan(events, ageNow) {
+  const ages = [];
+  events.forEach((e) => {
+    if (e.age_start != null) ages.push(Number(e.age_start));
+    if (e.age_end != null) ages.push(Number(e.age_end));
+  });
+  const hi = ageNow || Math.max(16, ...(ages.length ? ages : [16]));
+  const loRaw = ages.length ? Math.min(...ages) : Math.max(8, hi - 8);
+  const lo = Math.min(loRaw, hi - 6, 10);
+  return { ageLo: Math.max(0, lo - 1), ageHi: hi };
+}
+
+function applyCameraForView(trunkH) {
+  camAnim = null;
+  lastTrunkH = trunkH || lastTrunkH;
+  if (viewMode === "floor2d") {
+    controls.enableRotate = false;
+    camera.position.set(0.35, Math.max(14, lastTrunkH * 1.6), 0);
+    controls.target.set(0, 0, 0);
+  } else {
+    controls.enableRotate = true;
+    const dist = R_SCALE + 7.5;
+    camera.position.set(dist, lastTrunkH * 0.52, 0);
+    controls.target.set(0, lastTrunkH * 0.42, 0);
+  }
+  controls.update();
+}
+
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+/** 立体模式：镜头巡航到事件 θ 扇区外侧（仍俯视树干） */
+function cruiseToEvent(eventId) {
+  if (viewMode !== "stereo" || eventId == null || !trajMeta.has(eventId)) return;
+  const meta = trajMeta.get(eventId);
+  const th = meta.theta != null ? meta.theta : 0;
+  const dist = R_SCALE + 7.5;
+  const xz = polarXZ(dist, th);
+  const toPos = new THREE.Vector3(xz.x, lastTrunkH * 0.55, xz.z);
+  const toTarget = meta.mid
+    ? new THREE.Vector3(meta.mid.x * 0.35, meta.mid.y, meta.mid.z * 0.35)
+    : new THREE.Vector3(0, lastTrunkH * 0.42, 0);
+  camAnim = {
+    t0: performance.now(),
+    dur: 700,
+    fromPos: camera.position.clone(),
+    toPos: toPos,
+    fromTarget: controls.target.clone(),
+    toTarget: toTarget,
+  };
+}
+
+function syncAgeLabs(eventId) {
+  ageLabSprites.forEach((spr) => {
+    const on = eventId == null || spr.userData.eventId === eventId;
+    spr.material.opacity = on ? 1 : 0.22;
+    spr.material.transparent = true;
+    spr.visible = true;
+  });
+}
+
+function syncFloorToggleBtn() {
+  const b = document.getElementById("btn-floor-toggle");
+  if (!b) return;
+  b.textContent = showFloorProj ? "投影开" : "投影关";
+  b.className = showFloorProj ? "secondary" : "ghost";
+}
+
+function syncTrajButtons(eventId) {
+  const box = document.getElementById("event-chips");
+  if (!box) return;
+  const btns = box.querySelectorAll("button.traj");
+  btns.forEach((b) => {
+    const on = eventId != null && String(b.dataset.eid) === String(eventId);
+    b.classList.toggle("is-on", on);
+    b.classList.toggle("is-dim", eventId != null && !on);
+  });
+}
+
+function refreshEventChips(events) {
+  const box = document.getElementById("event-chips");
+  if (!box) return;
+  box.innerHTML = "";
+  (events || []).forEach((ev, i) => {
+    const neg = Number(ev.valence) < 0;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "traj ghost";
+    b.dataset.eid = String(ev.event_id);
+    b.style.borderLeft = "3px solid " + (neg ? "#2D8B4A" : "#7B2D8B");
+    b.textContent = "轨迹 " + (i + 1);
+    b.title = (neg ? "负 · " : "正 · ") + String(ev.item_key || "");
+    b.addEventListener("click", () => {
+      if (selectedId === ev.event_id) {
+        setHighlight(null);
+        annoEl.classList.remove("open");
+        return;
+      }
+      setHighlight(ev.event_id);
+      showAnno(ev);
+    });
+    box.appendChild(b);
+  });
+  syncTrajButtons(selectedId);
+}
+
+function syncViewButtons() {
+  const b2 = document.getElementById("btn-view-2d");
+  const b3 = document.getElementById("btn-view-3d");
+  if (b2) b2.className = viewMode === "floor2d" ? "secondary" : "ghost";
+  if (b3) b3.className = viewMode === "stereo" ? "secondary" : "ghost";
+}
+
+function renderPayload(payload) {
+  clearTree();
+  lastPayload = payload;
+  const events = payload.events || [];
+  const ageNow = payload.age_now || Math.max(18, ...events.map((e) => e.age_start || 0), 16);
+  const { ageLo } = ageSpan(events, ageNow);
+  const trunkAgeHi = viewMode === "floor2d" ? ageNow : (ageNow + PREDICT_YEARS);
+  const trunkH = buildTrunk(ageLo, trunkAgeHi);
+  addPolarFloorGuides();
+  events.forEach((ev) => addTrajectory(ev, ageLo, trunkAgeHi, trunkH, ageNow));
+  if (viewMode === "stereo") {
+    addCrownComposite(events, ageLo, ageNow, trunkAgeHi, trunkH);
+  }
+  applyCameraForView(trunkH);
+  refreshEventChips(events);
+  syncViewButtons();
+  syncFloorToggleBtn();
+  if (floorProjGroup) floorProjGroup.visible = showFloorProj;
+  errEl.textContent = events.length
+    ? (viewMode === "floor2d"
+      ? `地面 2D · ${events.length} 条 · 点按钮或轨迹看注释`
+      : `立体 · ${events.length} 条 · 点轨迹看注释 · 复位θ=0°`)
+    : "";
+}
+
+const SAMPLE_OLD = {
+  age_now: 16,
+  tool_version: "life-tree-1.9",
+  n_trajectories: 10,
+  events: [
+    { event_id: 1, item_key: "父母分居或离异", domain: "家庭状况", valence: -1,
+      age_start: 11, age_end: null, r_then: 0.92, r_now: 0.58, centrality: 0.90, theta: -0.90 * Math.PI,
+      obj_raw: 160, obj_w: 0.889, where: "家里", who: "家人", why: "家里的状况", how: "至今没解决",
+      where_eco: 0.95, who_tie: 0.95, closeness: 0.85, control_w: 0.30, turn_w: 0.70, ongoing: true,
+      now_salience: 0.75, mid_kind: "有一次变弱", age_mid: 13, r_mid: 0.70, is_focal_now: true },
+    { event_id: 2, item_key: "考试失败或不理想", domain: "学习压力", valence: -1,
+      age_start: 13.5, age_end: 15, r_then: 0.62, r_now: 0.18, centrality: 0.35, theta: -0.35 * Math.PI,
+      obj_raw: 38, obj_w: 0.211, where: "学校", who: "自己", why: "我自己的行为", how: "时间久了自然过去",
+      where_eco: 0.85, who_tie: 0.20, closeness: null, control_w: 0.85, turn_w: 0.25, ongoing: false,
+      now_salience: 0.20, mid_kind: "没有", is_focal_now: false },
+    { event_id: 3, item_key: "与同学或好友发生纠纷", domain: "人际关系", valence: -1,
+      age_start: 14, age_end: null, r_then: 0.28, r_now: 0.78, centrality: 0.55, theta: -0.55 * Math.PI,
+      obj_raw: 68, obj_w: 0.378, where: "学校", who: "同伴同学", why: "别人的行为", how: "后来变得更糟",
+      where_eco: 0.85, who_tie: 0.75, closeness: 0.70, control_w: 0.20, turn_w: 0.90, ongoing: true,
+      now_salience: 0.80, mid_kind: "有一次变强", age_mid: 15, r_mid: 0.55, is_focal_now: true },
+    { event_id: 4, item_key: "亲友患急重病", domain: "健康与生活变化", valence: -1,
+      age_start: 12, age_end: null, r_then: 0.72, r_now: 0.42, centrality: 0.75, theta: -0.75 * Math.PI,
+      obj_raw: 142, obj_w: 0.789, where: "家里", who: "家人", why: "意外 / 碰巧", how: "有人帮了我",
+      where_eco: 0.95, who_tie: 0.95, closeness: 0.90, control_w: 0.10, turn_w: 0.50, ongoing: false,
+      now_salience: 0.45, mid_kind: "说不清", is_focal_now: false },
+    { event_id: 5, item_key: "因为玩手机、游戏或刷视频和父母争吵", domain: "被批评 / 冲突 / 管束", valence: -1,
+      age_start: 15, age_end: null, r_then: 0.48, r_now: 0.52, centrality: 0.25, theta: -0.25 * Math.PI,
+      obj_raw: 45, obj_w: 0.25, where: "家里", who: "家人", why: "我自己的行为", how: "至今没解决",
+      where_eco: 0.95, who_tie: 0.95, closeness: 0.60, control_w: 0.85, turn_w: 0.70, ongoing: true,
+      now_salience: 0.50, mid_kind: "没有", is_focal_now: false },
+    { event_id: 6, item_key: "交到了很好的朋友", domain: "友谊 / 被接纳", valence: 1,
+      age_start: 12, age_end: null, r_then: 0.38, r_now: 0.88, centrality: 0.80, theta: 0.80 * Math.PI,
+      obj_raw: 125, obj_w: 0.694, where: "学校", who: "同伴同学", why: "别人的帮助或支持", how: "一直保持到现在",
+      where_eco: 0.85, who_tie: 0.75, closeness: 0.88, control_w: 0.40, turn_w: 0.55, ongoing: true,
+      now_salience: 0.85, mid_kind: "有一次变强", age_mid: 14, r_mid: 0.65, is_focal_now: true },
+    { event_id: 7, item_key: "拿到想要的名次、奖项或荣誉", domain: "学习 / 成就", valence: 1,
+      age_start: 14.5, age_end: 16, r_then: 0.78, r_now: 0.22, centrality: 0.30, theta: 0.30 * Math.PI,
+      obj_raw: 95, obj_w: 0.528, where: "学校", who: "自己", why: "我自己的努力", how: "慢慢淡下去了",
+      where_eco: 0.85, who_tie: 0.20, closeness: null, control_w: 0.90, turn_w: 0.25, ongoing: false,
+      now_salience: 0.25, mid_kind: "没有", is_focal_now: false },
+    { event_id: 8, item_key: "和父母的关系变好了", domain: "家庭关系", valence: 1,
+      age_start: 15, age_end: null, r_then: 0.4, r_now: 0.7, centrality: 0.65, theta: 0.65 * Math.PI,
+      obj_raw: 135, obj_w: 0.75, where: "家里", who: "家人", why: "别人的帮助或支持", how: "一直保持到现在",
+      where_eco: 0.95, who_tie: 0.95, closeness: 0.80, control_w: 0.40, turn_w: 0.55, ongoing: true,
+      now_salience: 0.70, mid_kind: "没有", is_focal_now: true },
+    { event_id: 9, item_key: "喜欢的人也喜欢我 / 恋爱开始了", domain: "恋爱 / 亲密关系", valence: 1,
+      age_start: 13, age_end: null, r_then: 0.55, r_now: 0.62, centrality: 0.85, theta: 0.85 * Math.PI,
+      obj_raw: 118, obj_w: 0.656, where: "学校", who: "恋人", why: "机会 / 运气", how: "成了后来好事的起点",
+      where_eco: 0.85, who_tie: 0.90, closeness: 0.92, control_w: 0.15, turn_w: 0.85, ongoing: true,
+      now_salience: 0.60, mid_kind: "有一次变强", age_mid: 14, r_mid: 0.80, is_focal_now: false },
+    { event_id: 10, item_key: "在困难时得到了别人的帮助", domain: "得到支持或帮助", valence: 1,
+      age_start: 14.8, age_end: null, r_then: 0.33, r_now: 0.5, centrality: 0.40, theta: 0.40 * Math.PI,
+      obj_raw: 105, obj_w: 0.583, where: "多个地方", who: "其他人", why: "别人的帮助或支持", how: "一直保持到现在",
+      where_eco: 0.60, who_tie: 0.45, closeness: 0.50, control_w: 0.40, turn_w: 0.55, ongoing: true,
+      now_salience: 0.45, mid_kind: "没有", is_focal_now: false },
+  ],
+};
+
+const SAMPLE = {
+  "age_now": 15,
+  "tool_version": "life-tree-3.3.1",
+  "source_note": "答卷序号10实采4条(含path_ar) + 合成补6条 → 共10条；3D优先画path_ar",
+  "n_real": 4,
+  "n_synthetic": 6,
+  "n_trajectories": 10,
+  "n_focal": 2,
+  "checklist_neg_n": 2,
+  "checklist_pos_n": 2,
+  "rt_total_ms": 48091,
+  "events": [
+    {
+      "event_id": 1,
+      "item_key": "恋爱不顺利或失恋",
+      "domain": "恋爱 / 亲密关系",
+      "valence": -1,
+      "aslec_a": "7",
+      "obj_raw": 90,
+      "obj_w": 0.5,
+      "age_start": 3,
+      "age_end": 13,
+      "r_then": 0.06,
+      "r_now": 0.719,
+      "theta": -1.854,
+      "centrality": 0.59,
+      "now_salience": 0.6,
+      "where": "宿舍",
+      "who": "恋人",
+      "why": "别人行为",
+      "how": "至今没解决",
+      "where_eco": 0.88,
+      "who_tie": 0.9,
+      "closeness": 0.39,
+      "control_w": 0.2,
+      "turn_w": 0.7,
+      "ongoing": true,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 1,
+      "mark_order": 1,
+      "rank_now": 3,
+      "impact_delta": 0.659,
+      "path_ar": [
+        [
+          3.5,
+          0.06
+        ],
+        [
+          3.6,
+          0.231
+        ],
+        [
+          3.8,
+          0.35
+        ],
+        [
+          4,
+          0.469
+        ],
+        [
+          4.3,
+          0.55
+        ],
+        [
+          4.6,
+          0.62
+        ],
+        [
+          4.8,
+          0.683
+        ],
+        [
+          5.1,
+          0.742
+        ],
+        [
+          5.4,
+          0.796
+        ],
+        [
+          5.7,
+          0.831
+        ],
+        [
+          6,
+          0.85
+        ],
+        [
+          6.3,
+          0.868
+        ],
+        [
+          6.7,
+          0.881
+        ],
+        [
+          7.1,
+          0.881
+        ],
+        [
+          7.4,
+          0.881
+        ],
+        [
+          7.8,
+          0.881
+        ],
+        [
+          8.1,
+          0.881
+        ],
+        [
+          8.5,
+          0.881
+        ],
+        [
+          8.8,
+          0.881
+        ],
+        [
+          9.1,
+          0.881
+        ],
+        [
+          9.5,
+          0.881
+        ],
+        [
+          9.8,
+          0.891
+        ],
+        [
+          10.2,
+          0.902
+        ],
+        [
+          10.5,
+          0.912
+        ],
+        [
+          10.9,
+          0.917
+        ],
+        [
+          11.3,
+          0.917
+        ],
+        [
+          11.5,
+          0.917
+        ],
+        [
+          11.9,
+          0.885
+        ],
+        [
+          12.1,
+          0.845
+        ],
+        [
+          12.5,
+          0.807
+        ],
+        [
+          12.8,
+          0.773
+        ],
+        [
+          13.1,
+          0.719
+        ]
+      ],
+      "path_ar_n": 32,
+      "_synthetic": false,
+      "_source": "wjx_seq10"
+    },
+    {
+      "event_id": 2,
+      "item_key": "恋爱不顺利或失恋（第2次）",
+      "domain": "恋爱 / 亲密关系",
+      "valence": -1,
+      "aslec_a": "7",
+      "obj_raw": 90,
+      "obj_w": 0.5,
+      "age_start": 6,
+      "age_end": 14,
+      "r_then": 0.082,
+      "r_now": 0.05,
+      "theta": -1.162,
+      "centrality": 0.37,
+      "now_salience": 0.64,
+      "where": "说不清",
+      "who": "恋人",
+      "why": "别人行为",
+      "how": "自己解决了",
+      "where_eco": 0.5,
+      "who_tie": 0.9,
+      "closeness": 0.61,
+      "control_w": 0.2,
+      "turn_w": 0.45,
+      "ongoing": false,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 2,
+      "mark_order": 2,
+      "rank_now": 4,
+      "impact_delta": -0.032,
+      "path_ar": [
+        [
+          5.6,
+          0.082
+        ],
+        [
+          5.9,
+          0.082
+        ],
+        [
+          6,
+          0.082
+        ],
+        [
+          6.3,
+          0.089
+        ],
+        [
+          6.6,
+          0.102
+        ],
+        [
+          7,
+          0.05
+        ],
+        [
+          7.4,
+          0.055
+        ],
+        [
+          7.7,
+          0.112
+        ],
+        [
+          8.1,
+          0.166
+        ],
+        [
+          8.6,
+          0.192
+        ],
+        [
+          9,
+          0.217
+        ],
+        [
+          9.5,
+          0.264
+        ],
+        [
+          9.9,
+          0.286
+        ],
+        [
+          10.7,
+          0.286
+        ],
+        [
+          11.1,
+          0.286
+        ],
+        [
+          11.5,
+          0.286
+        ],
+        [
+          11.9,
+          0.286
+        ],
+        [
+          12.2,
+          0.286
+        ],
+        [
+          12.4,
+          0.286
+        ],
+        [
+          12.6,
+          0.265
+        ],
+        [
+          12.8,
+          0.247
+        ],
+        [
+          12.9,
+          0.247
+        ],
+        [
+          13,
+          0.228
+        ],
+        [
+          13.1,
+          0.193
+        ],
+        [
+          13.2,
+          0.173
+        ],
+        [
+          13.4,
+          0.149
+        ],
+        [
+          13.5,
+          0.13
+        ],
+        [
+          13.7,
+          0.108
+        ],
+        [
+          13.8,
+          0.058
+        ],
+        [
+          13.9,
+          0.05
+        ],
+        [
+          14,
+          0.05
+        ]
+      ],
+      "path_ar_n": 31,
+      "_synthetic": false,
+      "_source": "wjx_seq10"
+    },
+    {
+      "event_id": 3,
+      "item_key": "在网上找到了合得来的同好",
+      "domain": "友谊 / 被接纳",
+      "valence": 1,
+      "aslec_a": "new",
+      "obj_raw": 58,
+      "obj_w": 0.322,
+      "age_start": 4,
+      "age_end": 14,
+      "r_then": 0.084,
+      "r_now": 0.816,
+      "theta": 1.194,
+      "centrality": 0.38,
+      "now_salience": 0.63,
+      "where": "网上",
+      "who": "自己",
+      "why": "自己努力",
+      "how": "一直保持到现在",
+      "where_eco": 0.7,
+      "who_tie": 0.2,
+      "closeness": null,
+      "control_w": 0.9,
+      "turn_w": 0.55,
+      "ongoing": true,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 3,
+      "mark_order": 3,
+      "rank_now": 2,
+      "impact_delta": 0.732,
+      "path_ar": [
+        [
+          4,
+          0.084
+        ],
+        [
+          4.4,
+          0.099
+        ],
+        [
+          4.7,
+          0.071
+        ],
+        [
+          5,
+          0.083
+        ],
+        [
+          5.3,
+          0.149
+        ],
+        [
+          5.6,
+          0.231
+        ],
+        [
+          5.9,
+          0.316
+        ],
+        [
+          6.2,
+          0.388
+        ],
+        [
+          6.5,
+          0.451
+        ],
+        [
+          6.8,
+          0.512
+        ],
+        [
+          7.1,
+          0.566
+        ],
+        [
+          7.4,
+          0.607
+        ],
+        [
+          7.7,
+          0.64
+        ],
+        [
+          8.1,
+          0.668
+        ],
+        [
+          8.4,
+          0.688
+        ],
+        [
+          8.8,
+          0.711
+        ],
+        [
+          9.1,
+          0.722
+        ],
+        [
+          9.4,
+          0.741
+        ],
+        [
+          9.7,
+          0.761
+        ],
+        [
+          10.1,
+          0.781
+        ],
+        [
+          10.4,
+          0.801
+        ],
+        [
+          10.7,
+          0.818
+        ],
+        [
+          11,
+          0.83
+        ],
+        [
+          11.5,
+          0.841
+        ],
+        [
+          11.8,
+          0.842
+        ],
+        [
+          12.1,
+          0.842
+        ],
+        [
+          12.4,
+          0.842
+        ],
+        [
+          12.8,
+          0.842
+        ],
+        [
+          13.2,
+          0.842
+        ],
+        [
+          13.5,
+          0.842
+        ],
+        [
+          13.8,
+          0.834
+        ],
+        [
+          14.2,
+          0.816
+        ]
+      ],
+      "path_ar_n": 32,
+      "_synthetic": false,
+      "_source": "wjx_seq10"
+    },
+    {
+      "event_id": 4,
+      "item_key": "在网上找到了合得来的同好（第2次）",
+      "domain": "友谊 / 被接纳",
+      "valence": 1,
+      "aslec_a": "new",
+      "obj_raw": 58,
+      "obj_w": 0.322,
+      "age_start": 4,
+      "age_end": 14,
+      "r_then": 0.624,
+      "r_now": 1,
+      "theta": 1.319,
+      "centrality": 0.42,
+      "now_salience": 0.4,
+      "where": "网上",
+      "who": "网上他人",
+      "why": "自己努力",
+      "how": "成了后来好事的起点",
+      "where_eco": 0.7,
+      "who_tie": 0.4,
+      "closeness": 0.71,
+      "control_w": 0.9,
+      "turn_w": 0.85,
+      "ongoing": false,
+      "mid_kind": "有一次变强",
+      "age_mid": 10.6,
+      "r_mid": 0.73,
+      "is_focal_now": false,
+      "select_order": 4,
+      "mark_order": 4,
+      "rank_now": 1,
+      "impact_delta": 0.376,
+      "path_ar": [
+        [
+          3.6,
+          0.624
+        ],
+        [
+          3.9,
+          0.678
+        ],
+        [
+          4.2,
+          0.727
+        ],
+        [
+          4.5,
+          0.747
+        ],
+        [
+          4.8,
+          0.764
+        ],
+        [
+          5.2,
+          0.778
+        ],
+        [
+          5.5,
+          0.804
+        ],
+        [
+          5.8,
+          0.825
+        ],
+        [
+          6.1,
+          0.852
+        ],
+        [
+          6.4,
+          0.872
+        ],
+        [
+          6.8,
+          0.887
+        ],
+        [
+          7.1,
+          0.912
+        ],
+        [
+          7.4,
+          0.934
+        ],
+        [
+          7.7,
+          0.967
+        ],
+        [
+          8.1,
+          0.994
+        ],
+        [
+          8.4,
+          1
+        ],
+        [
+          8.7,
+          1
+        ],
+        [
+          9.1,
+          1
+        ],
+        [
+          9.3,
+          1
+        ],
+        [
+          9.7,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          10.4,
+          1
+        ],
+        [
+          10.7,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          11.4,
+          1
+        ],
+        [
+          11.7,
+          1
+        ],
+        [
+          12.1,
+          1
+        ],
+        [
+          12.4,
+          1
+        ],
+        [
+          12.8,
+          1
+        ],
+        [
+          13.1,
+          1
+        ],
+        [
+          13.5,
+          1
+        ],
+        [
+          13.8,
+          1
+        ]
+      ],
+      "path_ar_n": 32,
+      "_synthetic": false,
+      "_source": "wjx_seq10"
+    },
+    {
+      "event_id": 5,
+      "item_key": "考试失败或不理想",
+      "domain": "学习压力",
+      "valence": -1,
+      "aslec_a": "3",
+      "obj_raw": 38,
+      "obj_w": 0.211,
+      "age_start": 12,
+      "age_end": 13,
+      "r_then": 0.72,
+      "r_now": 0.22,
+      "theta": -1.0995574287249998,
+      "centrality": 0.32,
+      "now_salience": 0.25,
+      "where": "学校",
+      "who": "自己",
+      "why": "我自己的行为",
+      "how": "时间久了自然过去",
+      "where_eco": 0.85,
+      "who_tie": 0.2,
+      "closeness": null,
+      "control_w": 0.85,
+      "turn_w": 0.25,
+      "ongoing": false,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 5,
+      "mark_order": 5,
+      "rank_now": 5,
+      "impact_delta": -0.5,
+      "path_ar_n": 0,
+      "_synthetic": true
+    },
+    {
+      "event_id": 6,
+      "item_key": "与同学或好友发生纠纷",
+      "domain": "人际关系",
+      "valence": -1,
+      "aslec_a": "4",
+      "obj_raw": 68,
+      "obj_w": 0.378,
+      "age_start": 13,
+      "age_end": null,
+      "r_then": 0.35,
+      "r_now": 0.68,
+      "theta": -1.7278759594250002,
+      "centrality": 0.55,
+      "now_salience": 0.72,
+      "where": "学校",
+      "who": "同伴同学",
+      "why": "别人的行为",
+      "how": "后来变得更糟",
+      "where_eco": 0.85,
+      "who_tie": 0.75,
+      "closeness": 0.7,
+      "control_w": 0.2,
+      "turn_w": 0.9,
+      "ongoing": true,
+      "mid_kind": "有一次变强",
+      "age_mid": 14,
+      "r_mid": 0.5,
+      "is_focal_now": true,
+      "select_order": 6,
+      "mark_order": 6,
+      "rank_now": 2,
+      "impact_delta": 0.33,
+      "path_ar_n": 0,
+      "_synthetic": true
+    },
+    {
+      "event_id": 7,
+      "item_key": "因为玩手机、游戏或刷视频和父母争吵",
+      "domain": "被批评 / 冲突 / 管束",
+      "valence": -1,
+      "aslec_a": "new",
+      "obj_raw": 45,
+      "obj_w": 0.25,
+      "age_start": 14,
+      "age_end": null,
+      "r_then": 0.45,
+      "r_now": 0.5,
+      "theta": -0.8796459429800001,
+      "centrality": 0.28,
+      "now_salience": 0.48,
+      "where": "家里",
+      "who": "家人",
+      "why": "我自己的行为",
+      "how": "至今没解决",
+      "where_eco": 0.95,
+      "who_tie": 0.95,
+      "closeness": 0.6,
+      "control_w": 0.8,
+      "turn_w": 0.7,
+      "ongoing": true,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 7,
+      "mark_order": 7,
+      "rank_now": 6,
+      "impact_delta": 0.05,
+      "path_ar_n": 0,
+      "_synthetic": true
+    },
+    {
+      "event_id": 8,
+      "item_key": "交到了很好的朋友",
+      "domain": "友谊 / 被接纳",
+      "valence": 1,
+      "aslec_a": "new",
+      "obj_raw": 125,
+      "obj_w": 0.694,
+      "age_start": 11,
+      "age_end": null,
+      "r_then": 0.4,
+      "r_now": 0.86,
+      "theta": 2.4504422697300003,
+      "centrality": 0.78,
+      "now_salience": 0.82,
+      "where": "学校",
+      "who": "同伴同学",
+      "why": "别人的帮助或支持",
+      "how": "一直保持到现在",
+      "where_eco": 0.85,
+      "who_tie": 0.75,
+      "closeness": 0.88,
+      "control_w": 0.4,
+      "turn_w": 0.55,
+      "ongoing": true,
+      "mid_kind": "有一次变强",
+      "age_mid": 13,
+      "r_mid": 0.62,
+      "is_focal_now": true,
+      "select_order": 8,
+      "mark_order": 8,
+      "rank_now": 1,
+      "impact_delta": 0.46,
+      "path_ar_n": 0,
+      "_synthetic": true
+    },
+    {
+      "event_id": 9,
+      "item_key": "拿到想要的名次、奖项或荣誉",
+      "domain": "学习 / 成就",
+      "valence": 1,
+      "aslec_a": "new",
+      "obj_raw": 95,
+      "obj_w": 0.528,
+      "age_start": 13.5,
+      "age_end": 15,
+      "r_then": 0.8,
+      "r_now": 0.28,
+      "theta": 1.00530964912,
+      "centrality": 0.32,
+      "now_salience": 0.3,
+      "where": "学校",
+      "who": "自己",
+      "why": "我自己的努力",
+      "how": "慢慢淡下去了",
+      "where_eco": 0.85,
+      "who_tie": 0.2,
+      "closeness": null,
+      "control_w": 0.9,
+      "turn_w": 0.25,
+      "ongoing": false,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 9,
+      "mark_order": 9,
+      "rank_now": 7,
+      "impact_delta": -0.52,
+      "path_ar_n": 0,
+      "_synthetic": true
+    },
+    {
+      "event_id": 10,
+      "item_key": "和父母的关系变好了",
+      "domain": "家庭关系",
+      "valence": 1,
+      "aslec_a": "new",
+      "obj_raw": 135,
+      "obj_w": 0.75,
+      "age_start": 14.5,
+      "age_end": null,
+      "r_then": 0.38,
+      "r_now": 0.66,
+      "theta": 1.94778744517,
+      "centrality": 0.62,
+      "now_salience": 0.68,
+      "where": "家里",
+      "who": "家人",
+      "why": "别人的帮助或支持",
+      "how": "一直保持到现在",
+      "where_eco": 0.95,
+      "who_tie": 0.95,
+      "closeness": 0.8,
+      "control_w": 0.4,
+      "turn_w": 0.55,
+      "ongoing": true,
+      "mid_kind": "没有",
+      "age_mid": null,
+      "r_mid": null,
+      "is_focal_now": false,
+      "select_order": 10,
+      "mark_order": 10,
+      "rank_now": 3,
+      "impact_delta": 0.28,
+      "path_ar_n": 0,
+      "_synthetic": true
+    }
+  ]
+};
+
+/** 统一成 { events, age_now? }；兼容问卷星整包 / 仅 events 数组 */
+function normalizePayload(obj) {
+  if (obj == null) throw new Error("空数据");
+  if (typeof obj === "string") {
+    const t = obj.trim();
+    if (!t) throw new Error("空文本");
+    return normalizePayload(JSON.parse(t));
+  }
+  if (Array.isArray(obj)) {
+    if (!obj.length) throw new Error("events 为空");
+    return { events: obj };
+  }
+  if (typeof obj !== "object") throw new Error("无法识别的数据类型");
+  // 问卷星整包字段（优先）
+  for (const k of ["life_tree_payload_json", "life_tree_payload"]) {
+    if (obj[k] == null || obj[k] === "") continue;
+    const inner = obj[k];
+    return normalizePayload(typeof inner === "string" ? JSON.parse(inner) : inner);
+  }
+  if (Array.isArray(obj.events)) return obj;
+  if (typeof obj.events_json === "string" && obj.events_json.trim()) {
+    return normalizePayload({ events: JSON.parse(obj.events_json), age_now: obj.age_now });
+  }
+  if (obj.item_key != null && (obj.r_then != null || obj.path_ar != null)) {
+    return { events: [obj], age_now: obj.age_now };
+  }
+  throw new Error("需含 events 数组，或 life_tree_payload / life_tree_payload_json");
+}
+
+/** RFC4180 简易 CSV 解析（支持引号内逗号与 "" 转义） */
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let i = 0;
+  let inQ = false;
+  const s = String(text).replace(/^\uFEFF/, "");
+  while (i < s.length) {
+    const ch = s[i];
+    if (inQ) {
+      if (ch === '"') {
+        if (s[i + 1] === '"') { cell += '"'; i += 2; continue; }
+        inQ = false; i++; continue;
+      }
+      cell += ch; i++; continue;
+    }
+    if (ch === '"') { inQ = true; i++; continue; }
+    if (ch === ",") { row.push(cell); cell = ""; i++; continue; }
+    if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && s[i + 1] === "\n") i++;
+      row.push(cell); cell = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = []; i++; continue;
+    }
+    cell += ch; i++;
+  }
+  row.push(cell);
+  if (row.length > 1 || row[0] !== "") rows.push(row);
+  return rows;
+}
+
+function tryParseJSONCell(raw) {
+  if (raw == null) return null;
+  let t = String(raw).trim();
+  if (!t || (t[0] !== "{" && t[0] !== "[")) return null;
+  try { return JSON.parse(t); } catch (e0) { /* continue */ }
+  // 偶发整格再包一层引号
+  if (t[0] === '"' && t[t.length - 1] === '"') {
+    try { return JSON.parse(JSON.parse(t)); } catch (e1) { /* ignore */ }
+  }
+  return null;
+}
+
+function scorePayloadObj(obj, ageHint, phase) {
+  if (!obj) return -1;
+  let events = null;
+  let age_now = ageHint;
+  if (Array.isArray(obj)) events = obj;
+  else if (Array.isArray(obj.events)) {
+    events = obj.events;
+    if (obj.age_now != null) age_now = obj.age_now;
+  } else return -1;
+  if (!events.length) return -1;
+  let pathN = 0;
+  events.forEach((ev) => {
+    if (Array.isArray(ev.path_ar) && ev.path_ar.length) pathN += ev.path_ar.length;
+  });
+  let phaseBonus = 0;
+  const ph = String(phase || "");
+  if (ph === "end" || ph.indexOf("act4") >= 0) phaseBonus = 40;
+  else if (ph.indexOf("act3") >= 0) phaseBonus = 30;
+  else if (ph.indexOf("act2") >= 0) phaseBonus = 20;
+  return events.length * 100 + pathN + phaseBonus + (age_now != null ? 1 : 0);
+}
+
+/**
+ * 从问卷星「单人」生命树 CSV / JSON 文本提取 payload。
+ * CSV 多为 jsPsych 多行（instr→act→end），优先取 life_tree_payload 最完整的一格。
+ */
+function extractPayloadFromText(text) {
+  const t = String(text || "").trim();
+  if (!t) throw new Error("空文件");
+  try { return normalizePayload(JSON.parse(t)); } catch (e0) { /* fall through */ }
+
+  let best = null;
+  let bestScore = -1;
+
+  function consider(raw, ageHint, phase) {
+    const obj = tryParseJSONCell(raw);
+    if (!obj) return;
+    const sc = scorePayloadObj(obj, ageHint, phase);
+    if (sc <= bestScore) return;
+    try {
+      let norm;
+      if (Array.isArray(obj)) {
+        norm = { events: obj };
+        if (ageHint != null && ageHint !== "") norm.age_now = Number(ageHint);
+      } else {
+        norm = normalizePayload(obj);
+        if (norm.age_now == null && ageHint != null && ageHint !== "") {
+          norm.age_now = Number(ageHint);
+        }
+      }
+      if (!norm.events || !norm.events.length) return;
+      best = norm;
+      bestScore = sc;
+    } catch (e) { /* skip */ }
+  }
+
+  // 1) 正规 CSV：按表头找 life_tree_payload / events_json
+  try {
+    const table = parseCSV(t);
+    if (table.length >= 2) {
+      const header = table[0].map((h) => String(h || "").trim());
+      const idx = {};
+      header.forEach((h, j) => { idx[h] = j; });
+      const colPayload = [
+        "life_tree_payload_json", "life_tree_payload",
+        "events_json", "events",
+      ].filter((k) => idx[k] != null);
+      const iAge = idx.age_now;
+      const iPhase = idx.phase != null ? idx.phase : idx.trial_type;
+      for (let r = 1; r < table.length; r++) {
+        const row = table[r];
+        const ageHint = iAge != null ? row[iAge] : null;
+        const phase = iPhase != null ? row[iPhase] : "";
+        colPayload.forEach((k) => consider(row[idx[k]], ageHint, phase));
+      }
+    }
+  } catch (eCsv) { /* fall through */ }
+
+  if (best) return best;
+
+  // 2) 退化：按引号块 / 长 JSON 片段再试
+  const quoted = [];
+  const reQ = /"((?:[^"]|"")*)"/g;
+  let mq;
+  while ((mq = reQ.exec(t)) && quoted.length < 80) {
+    const cell = mq[1].replace(/""/g, '"');
+    if (cell.length > 40) quoted.push(cell);
+  }
+  quoted.sort((a, b) => b.length - a.length);
+  for (let i = 0; i < Math.min(quoted.length, 30); i++) {
+    consider(quoted[i], null, "");
+  }
+  if (best) return best;
+
+  throw new Error("未找到可用的 events / life_tree_payload（请导入单人生命树 CSV，含 life_tree_payload 列）");
+}
+
+/** 0–25 岁四条典型：负 → 正 → 正 → 负；path_ar 由 then/mid/now 合成曲线 */
+function withSynthPath(ev, ageNow) {
+  const path_ar = synthPathAR(ev, ageNow);
+  return Object.assign({}, ev, { path_ar: path_ar, path_ar_n: path_ar.length });
+}
+const SAMPLE_FOUR = {
+  age_now: 25,
+  tool_version: "life-tree-3.5.0",
+  source_note: "典型演示（立体默认）：轨迹1负衰减 / 2正增长 / 3正淡出 / 4负加重",
+  n_trajectories: 4,
+  events: [
+    withSynthPath({
+      event_id: 1, item_key: "父母分居或离异", domain: "家庭状况", valence: -1,
+      age_start: 7, age_end: null, r_then: 0.88, r_now: 0.42, centrality: 0.85,
+      theta: -0.85 * Math.PI, obj_raw: 160, obj_w: 160 / 180,
+      where: "家里", who: "家人", why: "家里状况", how: "有人帮了我",
+      where_eco: 0.95, who_tie: 0.95, closeness: 0.8, control_w: 0.3, turn_w: 0.5,
+      ongoing: false, now_salience: 0.4, mid_kind: "有一次变弱", age_mid: 14, r_mid: 0.55,
+      is_focal_now: false, select_order: 1,
+    }, 25),
+    withSynthPath({
+      event_id: 2, item_key: "交到了很好的朋友", domain: "友谊 / 被接纳", valence: 1,
+      age_start: 12, age_end: null, r_then: 0.35, r_now: 0.82, centrality: 0.78,
+      theta: 0.78 * Math.PI, obj_raw: 125, obj_w: 125 / 180,
+      where: "学校", who: "朋友", why: "别人帮助", how: "一直保持到现在",
+      where_eco: 0.82, who_tie: 0.82, closeness: 0.88, control_w: 0.4, turn_w: 0.55,
+      ongoing: true, now_salience: 0.8, mid_kind: "没有", age_mid: null, r_mid: null,
+      is_focal_now: true, select_order: 2,
+    }, 25),
+    withSynthPath({
+      event_id: 3, item_key: "通过了一次重要的选拔或考试", domain: "学习 / 成就", valence: 1,
+      age_start: 18, age_end: 22, r_then: 0.8, r_now: 0.28, centrality: 0.4,
+      theta: 0.4 * Math.PI, obj_raw: 115, obj_w: 115 / 180,
+      where: "学校", who: "自己", why: "自己努力", how: "慢慢淡下去了",
+      where_eco: 0.82, who_tie: 0.2, closeness: null, control_w: 0.9, turn_w: 0.25,
+      ongoing: false, now_salience: 0.25, mid_kind: "没有", age_mid: null, r_mid: null,
+      is_focal_now: false, select_order: 3,
+    }, 25),
+    withSynthPath({
+      event_id: 4, item_key: "恋爱不顺利或失恋", domain: "恋爱 / 亲密关系", valence: -1,
+      age_start: 20, age_end: null, r_then: 0.52, r_now: 0.78, centrality: 0.72,
+      theta: -0.72 * Math.PI, obj_raw: 90, obj_w: 0.5,
+      where: "学校", who: "恋人", why: "别人行为", how: "后来变得更糟",
+      where_eco: 0.82, who_tie: 0.9, closeness: 0.7, control_w: 0.2, turn_w: 0.9,
+      ongoing: true, now_salience: 0.75, mid_kind: "有一次变强", age_mid: 22, r_mid: 0.7,
+      is_focal_now: true, select_order: 4,
+    }, 25),
+  ],
+};
+
+function applyPayload(payload) {
+  const norm = normalizePayload(payload);
+  document.getElementById("json").value = JSON.stringify(norm, null, 2);
+  renderPayload(norm);
+}
+
+document.getElementById("btn-four").onclick = () => { applyPayload(SAMPLE_FOUR); };
+document.getElementById("btn-view-2d").onclick = () => {
+  if (viewMode === "floor2d") return;
+  viewMode = "floor2d";
+  if (lastPayload) renderPayload(lastPayload);
+  else applyPayload(SAMPLE_FOUR);
+};
+document.getElementById("btn-view-3d").onclick = () => {
+  if (viewMode === "stereo") return;
+  viewMode = "stereo";
+  if (lastPayload) renderPayload(lastPayload);
+  else applyPayload(SAMPLE_FOUR);
+};
+document.getElementById("btn-reset-cam").onclick = () => {
+  applyCameraForView(lastTrunkH);
+};
+document.getElementById("btn-floor-toggle").onclick = () => {
+  showFloorProj = !showFloorProj;
+  if (floorProjGroup) floorProjGroup.visible = showFloorProj;
+  syncFloorToggleBtn();
+};
+document.getElementById("btn-sample").onclick = () => {
+  applyPayload(SAMPLE);
+};
+document.getElementById("btn-clear").onclick = () => {
+  clearTree();
+  lastPayload = null;
+  const box = document.getElementById("event-chips");
+  if (box) box.innerHTML = "";
+  errEl.textContent = "";
+};
+document.getElementById("btn-render").onclick = () => {
+  errEl.textContent = "";
+  try {
+    applyPayload(JSON.parse(document.getElementById("json").value));
+  } catch (e) {
+    errEl.textContent = "解析失败：" + e.message;
+  }
+};
+document.getElementById("btn-file").onclick = () => {
+  document.getElementById("fileInput").click();
+};
+document.getElementById("fileInput").onchange = (ev) => {
+  errEl.textContent = "";
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      applyPayload(extractPayloadFromText(String(reader.result || "")));
+    } catch (e) {
+      errEl.textContent = "导入失败：" + e.message;
+    }
+  };
+  reader.onerror = () => { errEl.textContent = "读取文件失败"; };
+  reader.readAsText(f, "UTF-8");
+};
+document.getElementById("anno-close").onclick = () => {
+  annoEl.classList.remove("open");
+  setHighlight(null);
+};
+
+let downXY = null;
+host.addEventListener("pointerdown", (e) => { downXY = { x: e.clientX, y: e.clientY }; });
+host.addEventListener("pointerup", (e) => {
+  if (!downXY) return;
+  const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y;
+  downXY = null;
+  if (dx * dx + dy * dy > 36) return; // 拖动旋转不算点击
+  const rect = host.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(pickables, false);
+  if (!hits.length) {
+    annoEl.classList.remove("open");
+    setHighlight(null);
+    return;
+  }
+  let id = hits[0].object.userData.eventId;
+  let o = hits[0].object;
+  while (id == null && o.parent) { o = o.parent; id = o.userData && o.userData.eventId; }
+  const ev = eventById.get(id);
+  if (!ev) return;
+  setHighlight(id);
+  showAnno(ev);
+});
+
+function loop() {
+  requestAnimationFrame(loop);
+  if (camAnim) {
+    const u = Math.min(1, (performance.now() - camAnim.t0) / camAnim.dur);
+    const e = easeInOut(u);
+    camera.position.lerpVectors(camAnim.fromPos, camAnim.toPos, e);
+    controls.target.lerpVectors(camAnim.fromTarget, camAnim.toTarget, e);
+    controls.update();
+    if (u >= 1) camAnim = null;
+  } else {
+    controls.update();
+  }
+  renderer.render(scene, camera);
+}
+loop();
+
+// CDN 挂了时给可见提示（模块 import 失败不会跑到这；作二次保险）
+if (!renderer || !renderer.domElement) {
+  errEl.textContent = "三维库加载失败，请检查网络后刷新（cdn.jsdelivr.net）";
+}
+document.getElementById("btn-four").click();
+</script>
+</body>
+</html>

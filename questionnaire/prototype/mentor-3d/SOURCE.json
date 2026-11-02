@@ -1,0 +1,16 @@
+{
+  "source_url": "https://zhenghui.fun/tools/life-tree-viz",
+  "retrieved_date": "2026-11-02",
+  "source_sha256": "cbd017bd97d4116fac82419c665a6b27b4ff9ec6cc44b33e67f4d3010d194575",
+  "viewer": "NRLab life-tree 3D v3.5",
+  "three_version": "0.160.0",
+  "adaptation": [
+    "Local dependencies",
+    "Same-origin questionnaire bridge",
+    "Embedded layout",
+    "Annotation text escaping",
+    "Explicit zero radius handling",
+    "SVGRenderer compatibility fallback with original Three.js geometry",
+    "Fit original camera orientation to viewport bounds"
+  ]
+}

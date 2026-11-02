@@ -1,0 +1,22 @@
+# generated data
+*.csv
+*.xlsx
+*.sav
+*.rds
+*.parquet
+# identifiers and local secrets
+.env
+.env.*
+*.key
+*.pem
+# Response data and local exports are never published.
+data/**
+!data/README.md
+exports/
+results/
+node_modules/
+*.zip
+*.jsonl
+# temporary files
+*.log
+*.tmp

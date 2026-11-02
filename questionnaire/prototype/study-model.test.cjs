@@ -1,0 +1,37 @@
+const assert = require('node:assert/strict');
+const Order = require('./event-order.js');
+const Study = require('./study-model.js');
+for (const [training,competition,group] of [[true,true,'training_and_competition'],[true,false,'training_only'],[false,true,'competition_only'],[false,false,'neither']]) {
+  assert.equal(Study.participationGroup({training_history:training,competition_history:competition}),group);
+}
+assert.equal(Study.participationGroup({training_history:false}),'unknown');
+assert.equal(Study.exposure({training_history:false,competition_history:false,award_history:true}).award_history,false);
+assert.equal(Study.exposure({training_history:true,competition_history:true}).award_history,null);
+assert.equal(Study.canDraw({training_history:false,competition_history:false},[{id:'old'}]),false);
+assert.equal(Study.canDraw({training_history:true,competition_history:false},[]),false);
+assert.equal(Study.canDraw({training_history:true,competition_history:false},[{id:'new'}]),true);
+const catalog = require('./event-catalog.js');
+assert.equal(catalog.length,24);
+assert.equal(new Set(catalog.map(item=>item.id)).size,24);
+assert.equal(catalog.filter(item=>item.valence===1).length,12);
+assert.equal(catalog.filter(item=>item.valence===-1).length,12);
+for (const id of ['award','selection','breakthrough','support','team_belonging','injury','failed_selection','training_pause','coach_conflict','resource_gap']) assert.ok(catalog.some(item=>item.id===id));
+assert.ok(catalog.every(item=>item.theme&&item.label&&item.domain));
+const state={events:[],recall_log:[],order_history:[]};
+Order.add(state,{id:'a',valence:1,path_ar:[[10,.2],[20,.4]]});
+Order.add(state,{id:'b',valence:-1});
+Order.add(state,{id:'c',valence:1});
+assert.ok(Order.reorder(state,['c','a','b']));
+assert.deepEqual(state.events.map(e=>e.select_order),[1,2,3]);
+assert.deepEqual(state.events.map(e=>e.recall_order),[3,1,2]);
+assert.equal(state.recall_log[0].id,'a');
+assert.deepEqual(state.events[1].path_ar,[[10,.2],[20,.4]]);
+assert.equal(Order.reorder(state,['c','a','a']),false);
+state.events=state.events.filter(e=>e.id!=='a');Order.renumber(state);
+Order.add(state,{id:'a'});assert.equal(state.events.at(-1).recall_order,1);
+Order.add(state,{id:'d'});assert.equal(state.events.at(-1).recall_order,4);
+const restored=JSON.parse(JSON.stringify(state));Order.normalize(restored);
+assert.deepEqual(restored.events.map(e=>e.recall_order),[3,2,1,4]);
+const legacy={events:[{id:'old-a'},{id:'old-b'}]};Order.normalize(legacy);
+assert.equal(legacy.events[0].recall_order_source,'legacy_snapshot');
+console.log('PASS: four exposure groups, unknown versus zero, no-competition award zero, independent recall/drawing order, reorder validation, removal/reselection, persistence, legacy provenance.');

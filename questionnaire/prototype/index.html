@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>体育经历生命树原型</title>
+  <meta name="theme-color" content="#F0F5F0" />
+  <link rel="icon" href="assets/life-tree.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="mentor-draw.css" />
+  <link rel="stylesheet" href="life-tree-3d.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <img class="brand-mark" src="assets/life-tree.svg" alt="" width="48" height="48" />
+      <div>
+        <p class="eyebrow">体育经历生活史工具</p>
+        <h1>把经历放回时间里</h1>
+      </div>
+      <div class="topbar-actions">
+        <a class="demo-link" href="life-tree-3d-demo.html">3D 演示 ↗</a>
+        <button class="ghost-button" id="resetBtn" type="button">清空本地草稿</button>
+      </div>
+    </header>
+
+    <nav class="stepper" aria-label="问卷进度">
+      <button class="step-dot is-active" data-step="0" type="button"><span>01</span>背景</button>
+      <button class="step-dot" data-step="1" type="button"><span>02</span>经历</button>
+      <button class="step-dot" data-step="2" type="button"><span>03</span>轨迹</button>
+      <button class="step-dot" data-step="3" type="button"><span>04</span>情境</button>
+      <button class="step-dot" data-step="4" type="button"><span>05</span>检查</button>
+    </nav>
+
+    <section class="stage" id="stage" aria-live="polite"></section>
+
+    <footer class="footer-bar">
+      <span id="saveStatus">本地草稿自动保存</span>
+      <div class="footer-actions">
+        <button class="secondary-button" id="backBtn" type="button">上一步</button>
+        <button class="primary-button" id="nextBtn" type="button">开始</button>
+      </div>
+    </footer>
+  </main>
+  <script src="life-tree.js"></script>
+  <script src="event-order.js"></script>
+  <script src="study-model.js"></script>
+  <script src="event-catalog.js"></script>
+  <script src="mentor-draw.js"></script>
+  <script src="life-tree-3d.js"></script>
+  <script src="tree-ui.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
