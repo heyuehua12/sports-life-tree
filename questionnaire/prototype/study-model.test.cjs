@@ -34,4 +34,27 @@ const restored=JSON.parse(JSON.stringify(state));Order.normalize(restored);
 assert.deepEqual(restored.events.map(e=>e.recall_order),[3,2,1,4]);
 const legacy={events:[{id:'old-a'},{id:'old-b'}]};Order.normalize(legacy);
 assert.equal(legacy.events[0].recall_order_source,'legacy_snapshot');
+// Horizontal cards must reorder within a row as well as across rows.
+const {JSDOM}=require('jsdom');
+const errors=[];const {VirtualConsole}=require('jsdom');const virtualConsole=new VirtualConsole();virtualConsole.on('jsdomError',e=>errors.push(e.message));
+const dom=new JSDOM('<ol></ol>',{runScripts:'outside-only',virtualConsole});const list=dom.window.document.querySelector('ol');
+dom.window.eval(require('node:fs').readFileSync(require('node:path').join(__dirname,'event-order.js'),'utf8'));
+dom.window.scrollBy=()=>{};
+const grid={events:['a','b','c','d'].map(id=>({id})),recall_log:[],order_history:[]};Order.normalize(grid);
+for(const event of grid.events){
+  const row=dom.window.document.createElement('li');row.className='selected-row';row.dataset.id=event.id;
+  row.innerHTML=`<button class="order-handle" data-id="${event.id}"></button>`;list.append(row);
+  row.getBoundingClientRect=()=>{const i=[...list.children].indexOf(row);return {left:(i%2)*200,top:Math.floor(i/2)*160,width:200,height:160};};
+  row.firstChild.setPointerCapture=()=>{};
+}
+let updates=0;dom.window.EventOrder.bind(list,grid,()=>updates++);
+const pointer=(id,type,x,y)=>{const e=new dom.window.MouseEvent(type,{clientX:x,clientY:y,bubbles:true,cancelable:true,button:0});Object.defineProperty(e,'pointerId',{value:1});list.querySelector(`[data-id="${id}"] .order-handle`).dispatchEvent(e);};
+pointer('a','pointerdown',100,80);pointer('a','pointermove',300,80);
+assert.deepEqual([...list.children].map(row=>row.dataset.id),['b','a','c','d']);
+pointer('a','pointermove',100,240);pointer('a','pointerup',100,240);
+assert.deepEqual(Array.from(grid.events,e=>e.id),['b','c','a','d']);assert.equal(updates,1);
+pointer('d','pointerdown',300,240);pointer('d','pointermove',100,80);pointer('d','pointercancel',100,80);
+assert.deepEqual([...list.children].map(row=>row.dataset.id),Array.from(grid.events,e=>e.id));assert.equal(updates,1);
+list.querySelector('[data-id="a"] .order-handle').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true,cancelable:true}));
+assert.deepEqual(Array.from(grid.events,e=>e.id),['b','a','c','d']);assert.equal(updates,2);assert.deepEqual(errors,[]);dom.window.close();
 console.log('PASS: four exposure groups, unknown versus zero, no-competition award zero, independent recall/drawing order, reorder validation, removal/reselection, persistence, legacy provenance.');

@@ -40,8 +40,8 @@
     list.querySelectorAll('[data-move]').forEach(button => button.addEventListener('click', () => move(button.dataset.id, Number(button.dataset.move))));
     list.querySelectorAll('.order-handle').forEach(handle => {
       handle.addEventListener('keydown', event => {
-        if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
-        event.preventDefault(); move(handle.dataset.id, event.key === 'ArrowUp' ? -1 : 1);
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+        event.preventDefault(); move(handle.dataset.id, ['ArrowUp','ArrowLeft'].includes(event.key) ? -1 : 1);
       });
       let drag = null;
       handle.addEventListener('pointerdown', event => {
@@ -55,9 +55,18 @@
       handle.addEventListener('pointermove', event => {
         if (!drag || drag.pointerId !== event.pointerId) return;
         event.preventDefault();
-        const siblings = [...list.children].filter(row => row !== drag.row);
-        const target = siblings.find(row => event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2);
-        list.insertBefore(drag.row, target || null);
+        // Compare both axes so cards in the same grid row can be reordered.
+        // Include the dragged slot to keep the layout stable after insertion.
+        const rows = [...list.children];
+        const target = rows.reduce((nearest,row) => {
+          const rect = row.getBoundingClientRect();
+          const distance = (event.clientX - rect.left - rect.width / 2) ** 2 + (event.clientY - rect.top - rect.height / 2) ** 2;
+          return !nearest || distance < nearest.distance ? {row,distance} : nearest;
+        },null)?.row;
+        if (target && target !== drag.row) {
+          const movingForward = rows.indexOf(drag.row) < rows.indexOf(target);
+          list.insertBefore(drag.row, movingForward ? target.nextSibling : target);
+        }
         handle.setPointerCapture(event.pointerId);
         if (event.clientY < 75) window.scrollBy(0, -14);
         if (event.clientY > window.innerHeight - 75) window.scrollBy(0, 14);

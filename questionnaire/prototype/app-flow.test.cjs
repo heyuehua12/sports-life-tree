@@ -13,7 +13,7 @@ function mount(saved){
   return {dom,w,doc:w.document,errors,run:code=>vm.runInContext(code,context)};
 }
 function click(m,selector){const el=m.doc.querySelector(selector);assert.ok(el,'missing '+selector);el.click();}
-function change(m,selector,value){let el=m.doc.querySelector(selector);assert.ok(el,'missing '+selector);if(el.type==='radio'){el=[...m.doc.querySelectorAll(selector)].find(input=>input.value===value);assert.ok(el,'missing radio value '+value);el.click();return;}el.value=value;el.dispatchEvent(new m.w.Event('change',{bubbles:true}));}
+function change(m,selector,value){let el=m.doc.querySelector(selector);assert.ok(el,'missing '+selector);if(el.tagName==='FIELDSET'){el=[...el.querySelectorAll('input[type="radio"]')].find(input=>input.value===value);assert.ok(el,'missing fieldset radio value '+value);el.click();return;}if(el.type==='radio'){el=[...m.doc.querySelectorAll(selector)].find(input=>input.value===value);assert.ok(el,'missing radio value '+value);el.click();return;}el.value=value;el.dispatchEvent(new m.w.Event('change',{bubbles:true}));}
 function input(m,selector,value){const el=m.doc.querySelector(selector);assert.ok(el);el.value=value;el.dispatchEvent(new m.w.Event('input',{bubbles:true}));}
 function background(m,training=false,competition=false){
   assert.equal(m.doc.querySelectorAll('[name="age"]').length,20);
