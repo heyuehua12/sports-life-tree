@@ -3,7 +3,7 @@
   // Map original questionnaire responses before transporting them to the viewer.
   function payloadFor(events, details, age) {
     return {
-      age_now: age, tool_version: 'sports-life-tree-prototype-v0.9',
+      age_now: age, tool_version: 'sports-life-tree-prototype-v0.9.1',
       events: events.filter(e => root.LifeTree.isComplete(e, age)).map(e => {
         const d = details[e.id] || {};
         return { ...root.EventMapping.flatten(e,d,age), event_id:e.id, item_key:e.label, details_raw:d };

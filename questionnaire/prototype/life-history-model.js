@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const VERSION = 'sports-life-tree-prototype-v0.9';
+  const VERSION = 'sports-life-tree-prototype-v0.9.1';
   const DOMAINS = ['家庭','学业','人际','健康','生活转变','个人成长'];
   const RELATIONS = { none:'与体育无关', training:'专项训练', competition:'体育比赛', training_and_competition:'训练与比赛都有', everyday_activity:'体育课或日常运动', sports_unspecified:'与体育有关，具体场景说不清', uncertain:'是否与体育有关说不清' };
   const sportsRelations = ['training','competition','training_and_competition','everyday_activity'];
@@ -20,7 +20,10 @@
   function normalize(state) {
     const migrated = state.schema_version !== VERSION;
     const fromVersion = state.schema_version;
-    const preSharedHistory = !['sports-life-tree-prototype-v0.7','sports-life-tree-prototype-v0.8',VERSION].includes(fromVersion);
+    // v0.7–v0.9 already contain shared-life-history answers. The v0.9.1
+    // release only tightens presentation and mapping; it must not turn a
+    // previously confirmed rating into `legacy_unverified`.
+    const preSharedHistory = !['sports-life-tree-prototype-v0.7','sports-life-tree-prototype-v0.8','sports-life-tree-prototype-v0.9',VERSION].includes(fromVersion);
     state.events.forEach(normalizeEvent);
     state.merge_history ||= [];
     if (migrated) {

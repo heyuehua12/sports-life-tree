@@ -36,8 +36,8 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved) return defaultState();
-    if (saved.schema_version !== LifeHistory.VERSION && !localStorage.getItem(STORAGE_KEY + '-before-v0.9')) {
-      try { localStorage.setItem(STORAGE_KEY + '-before-v0.9', JSON.stringify(saved)); } catch (_) { saved.draft_backup_failed = true; }
+    if (saved.schema_version !== LifeHistory.VERSION && !localStorage.getItem(STORAGE_KEY + '-before-v0.9.1')) {
+      try { localStorage.setItem(STORAGE_KEY + '-before-v0.9.1', JSON.stringify(saved)); } catch (_) { saved.draft_backup_failed = true; }
     }
     const merged = Object.assign(defaultState(), saved);
     merged.profile = { ...defaultState().profile, ...saved.profile };
@@ -109,6 +109,11 @@ function renderProfile() {
       <h2>无论有没有体育经历，都欢迎参加。</h2>
       <p class="stage-lead">请回顾从小到现在的比赛和专项训练经历，包括已经停止的经历。体育专业、队伍身份与实际经历分别记录。</p>
     </div>
+    <aside class="study-notice" aria-label="研究说明与数据边界">
+      <div class="study-notice-title">这是交互原型，不是正式诊断问卷</div>
+      <p>本页面用于开发“生活史 × 体育经历”的横断面研究工具。作答自愿，可随时返回或清空；当前回答只保存在本浏览器并可下载为 JSON，不会上传到 GitHub。本版本尚未接入正式的心理韧性、焦虑和抑郁量表，也不提供诊断或个体反馈。</p>
+      <p>正式招募前仍需完成伦理审核、知情同意、敏感内容退出提示、心理支持资源说明和安全的数据收集后台。</p>
+    </aside>
     <section class="profile-basics" aria-label="年龄与年级">
       <fieldset class="profile-picker"><legend>年龄 <span>点击选择周岁</span></legend><div class="age-options">${Array.from({length:20},(_,i)=>String(i+16)).map(value=>`<label class="pick-tile"><input type="radio" name="age" value="${value}" data-profile-pick="age" ${String(state.profile.age)===value?'checked':''}/><span>${value}</span></label>`).join('')}</div></fieldset>
       <fieldset class="profile-picker"><legend>年级 <span>点击选择</span></legend><div class="year-options">${['大一','大二','大三','大四','大五及以上','研究生'].map(value=>`<label class="pick-tile"><input type="radio" name="year" value="${value}" data-profile-pick="year" ${state.profile.year===value?'checked':''}/><span>${value}</span></label>`).join('')}</div></fieldset>

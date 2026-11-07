@@ -150,6 +150,9 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 .review-stat span { color: var(--muted); font-size: 0.82rem; }
 .json-box { min-height: 200px; width: 100%; border: 1px solid var(--line); background: #111a18; color: #e7f3ec; padding: 16px; font: 0.78rem/1.55 Consolas, monospace; resize: vertical; }
 .notice { padding: 14px 16px; border-left: 3px solid var(--green); background: var(--green-soft); color: #244a31; line-height: 1.6; }
+.study-notice { margin: -8px 0 28px; padding: 16px 18px; border: 1px solid #d6dfe5; border-left: 4px solid #5d7180; background: #f5f8fa; color: #334651; line-height: 1.6; }
+.study-notice-title { margin-bottom: 5px; font-weight: 700; color: #2e4551; }
+.study-notice p { margin: 5px 0 0; font-size: .88rem; }
 
 .footer-bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 0 0; color: var(--muted); font-size: 0.8rem; }
 .footer-actions { display: flex; gap: 8px; }

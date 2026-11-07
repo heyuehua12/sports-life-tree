@@ -85,7 +85,7 @@ click(t,'#nextBtn');assert.ok(t.doc.querySelector('[data-scale$="|autonomy"]'));
 change(t,'[data-detail-field$="|injury_related"]','true');assert.ok(t.doc.querySelector('[data-detail-field$="|injury_stop_days"]'));change(t,'[data-detail-field$="|injury_stop_days"]','0');click(t,'#nextBtn');assert.equal(t.w.buildPayload().events[0].details.injury_stop_days,0);assert.equal(t.w.buildPayload().process.n_events,1);assert.deepEqual(t.errors,[]);t.dom.window.close();
 
 const legacy={step:4,profile:{age:'20',training_history:true,competition_history:false},events:[{id:'injury',label:'伤病影响训练或比赛',valence:-1,trajectory_version:3,trajectory_age_now:20,path_ar:[[12,-.7],[20,-.2]]}],details:{injury:{who:['家人'],closeness:.5}}};
-const old=mount(legacy);assert.equal(old.run('state.step'),1);assert.equal(old.run('state.events[0].sports_relation'),'sports_unspecified');assert.equal(old.w.localStorage.getItem(KEY+'-before-v0.9'),JSON.stringify(legacy));assert.deepEqual(JSON.parse(old.run('JSON.stringify(state.events[0].path_ar)')),legacy.events[0].path_ar);
+const old=mount(legacy);assert.equal(old.run('state.step'),1);assert.equal(old.run('state.events[0].sports_relation'),'sports_unspecified');assert.equal(old.w.localStorage.getItem(KEY+'-before-v0.9.1'),JSON.stringify(legacy));assert.deepEqual(JSON.parse(old.run('JSON.stringify(state.events[0].path_ar)')),legacy.events[0].path_ar);
 change(old,'#relation-injury','training');click(old,'#nextBtn');practice(old);click(old,'#nextBtn');assert.equal(old.run('state.step'),3);
 assert.equal(old.doc.querySelector('#injury-closeness').textContent,'未作答');
 assert.equal(old.w.buildPayload().events[0].details.closeness,null);
