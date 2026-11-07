@@ -114,10 +114,15 @@ const mappedDraft={schema_version:require('./life-history-model.js').VERSION,ste
     {id:'support',label:'得到支持 <img src=x onerror=alert(1)>',valence:1,source_scope:'sports',source_catalog_ids:['support'],domains:['体育','人际'],sports_relation:'training',relation_confirmed:true,trajectory_version:3,trajectory_age_now:20,path_ar:[[16,.4],[20,.8]]}]};
 const q=mount(mappedDraft);assert.equal(q.run('state.step'),3);
 assert.equal(q.doc.querySelector('.detail-list select'),null,'all context choices are expanded radios');
-click(q,'[data-chip="injury|where|训练场"]');change(q,'[data-detail-field="injury|where_basis"]','学校');
+click(q,'[data-chip="injury|where|训练场"]');
+assert.equal(q.doc.activeElement.dataset.chip,'injury|where|训练场','conditional redraw preserves the selected chip focus');
+change(q,'[data-detail-field="injury|where_basis"]','学校');
 click(q,'[data-chip="injury|who|主教练"]');input(q,'#rating-injury-closeness','.8');
 click(q,'[data-chip="injury|who|队友"]');assert.equal(q.doc.querySelector('#rating-injury-closeness'),null);
-change(q,'[data-detail-field="injury|who_primary"]','主教练');change(q,'[data-detail-field="injury|who_tie_basis"]','老师');input(q,'#rating-injury-closeness','0');
+change(q,'[data-detail-field="injury|who_primary"]','主教练');
+assert.equal(q.doc.activeElement.dataset.detailField,'injury|who_primary','conditional redraw preserves radio focus');
+assert.equal(q.doc.activeElement.value,'主教练');assert.equal(q.doc.activeElement.checked,true);
+change(q,'[data-detail-field="injury|who_tie_basis"]','老师');input(q,'#rating-injury-closeness','0');
 click(q,'[data-chip="injury|why|教练反馈或决策"]');change(q,'[data-detail-field="injury|why_basis"]','别人行为');
 change(q,'[data-detail-field="injury|why_basis"]','');assert.equal(q.w.buildPayload().events[0].mapping.fields.F2_control_w,null);
 change(q,'[data-detail-field="injury|why_basis"]','别人行为');assert.equal(q.doc.querySelectorAll('[data-detail-field="injury|why_basis"]:checked').length,1);

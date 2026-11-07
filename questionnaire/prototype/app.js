@@ -241,7 +241,7 @@ function renderTrajectories() {
 
 function renderDetails() {
   if(!state.events.length){stage.innerHTML='<h2>没有事件需要补充。</h2>';return;}
-  stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第四步 · 情境</div><h2>每一件经历，都有相同的核心问题。</h2><p class="stage-lead">一般生活与体育经历按同一顺序回答。训练、比赛、伤病等专项问题，只在对应经历中出现；不适用的项目不会记为零。</p></div><div class="detail-list">${state.events.map(detailCard).join('')}</div>`;
+  stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第四步 · 情境</div><h2>一件经历，一张情境卡片。</h2><p class="stage-lead">按卡片顺序，补充每件经历的地点、人物和后续变化。训练、比赛、伤病等专项问题，只在适用的卡片中出现。</p></div><nav class="detail-navigator" aria-label="跳转到事件卡片"><div class="detail-navigator-heading"><strong>${state.events.length} 张事件卡片</strong><span>点击名称，快速定位</span></div><div class="detail-jump-list">${state.events.map((e,i)=>`<a class="detail-jump detail-jump--${e.valence>0?'pos':'neg'}" href="#detail-${e.id}" title="${esc(e.label)}"><span>${String(i+1).padStart(2,'0')}</span><span>${esc(e.label)}</span></a>`).join('')}</div></nav><div class="detail-list">${state.events.map(detailCard).join('')}</div>`;
   stage.querySelectorAll('[data-chip]').forEach(btn=>btn.addEventListener('click',()=>{
     const [id,field,value]=btn.dataset.chip.split('|'),d=detailsFor(id);
     const previous=EventMapping.derive(eventById(id),d,currentAge()).sources.who_primary;
@@ -250,7 +250,7 @@ function renderDetails() {
     if(field==='why')d.why_basis=null;
     if(field==='how'){d.context_change_history||=[];d.context_change_history.push({field:'how',age_mid:d.age_mid??null,r_mid:d.r_mid??null});d.age_mid=null;d.r_mid=null;}
     if(field==='who'&&previous!==EventMapping.derive(eventById(id),d,currentAge()).sources.who_primary)resetPersonContext(d,previous);
-    renderDetails();saveState();
+    refreshDetailCard(btn);saveState();
   }));
   stage.querySelectorAll('[data-scale]').forEach(input=>input.addEventListener('input',()=>{
     const [id,field]=input.dataset.scale.split('|');const d=detailsFor(id);d[field]=Number(input.value);d.rating_provenance ||= {};d.rating_provenance[field]='self_report';updateFader(input,id,field,Number(input.value));saveState();
@@ -262,8 +262,18 @@ function renderDetails() {
     const [id,field]=input.dataset.detailField.split('|');const d=detailsFor(id);
     if(field==='who_primary'&&input.value!==d.who_primary)resetPersonContext(d,d.who_primary);
     d[field]=input.value===''?null:field==='injury_related'?input.value==='true':field==='injury_stop_days'?Number(input.value):input.value;
-    if(['injury_related','competition_outcome','who_primary','who_tie_basis'].includes(field))renderDetails();saveState();
+    if(['injury_related','competition_outcome','who_primary','who_tie_basis'].includes(field))refreshDetailCard(input);saveState();
   }));
+}
+function refreshDetailCard(source) {
+  // Conditional questions rebuild the cards. Keep the answered control in
+  // place and preserve keyboard focus instead of jumping back up the form.
+  const attribute=source.hasAttribute('data-chip')?'data-chip':'data-detail-field';
+  const key=source.getAttribute(attribute),value=source.value;
+  const previousTop=source.getBoundingClientRect().top;
+  renderDetails();
+  const replacement=[...stage.querySelectorAll(`[${attribute}]`)].find(control=>control.getAttribute(attribute)===key&&control.value===value);
+  if(replacement){replacement.focus({preventScroll:true});window.scrollBy(0,replacement.getBoundingClientRect().top-previousTop);}
 }
 function resetPersonContext(d,previous) {
   if(d.closeness!=null||d.who_tie_basis){d.context_change_history||=[];d.context_change_history.push({field:'who_primary',previous,closeness:d.closeness??null,who_tie_basis:d.who_tie_basis??null});}
@@ -288,21 +298,26 @@ function detailCard(e,index) {
   const pairs=values=>values.map(x=>[x,x]);
   const levels=['班级或院系','校级','社区或俱乐部','市级','省级','国家级','国际级','其他或说不清'].map(x=>[x,x]);
   const interpersonal=primary&&!['自己','说不清'].includes(primary);
-  return `<article class="detail-card detail-card--${e.valence>0?'pos':'neg'}"><h3><span class="${e.valence>0?'tag-pos':'tag-neg'}">${String(index+1).padStart(2,'0')}</span> ${esc(e.label)}</h3><p class="hint">${e.domains.map(esc).join(' · ')} · ${LifeHistory.RELATIONS[e.sports_relation]||'体育关系待确认'}</p>
-    <div class="field"><label>主要发生在哪里？</label><div class="chip-grid">${chips('where')}</div></div>
+  const question=(field,label,multiple=false)=>`<fieldset class="context-question"><legend>${label}<span>${multiple?'可多选':'单选'}</span></legend><div class="chip-grid">${chips(field,multiple)}</div></fieldset>`;
+  return `<article class="detail-card detail-card--${e.valence>0?'pos':'neg'}" id="detail-${e.id}" aria-labelledby="detail-title-${e.id}"><header class="detail-card-header"><div class="detail-card-heading"><span class="detail-card-number" aria-hidden="true">${String(index+1).padStart(2,'0')}</span><div><p class="detail-card-kind">${e.valence>0?'好事 · 正向经历':'不好的事 · 负向经历'}</p><h3 id="detail-title-${e.id}">${esc(e.label)}</h3></div></div><div class="detail-card-meta">${e.domains.map(tag=>`<span>${esc(tag)}</span>`).join('')}<span class="detail-relation-tag">${esc(LifeHistory.RELATIONS[e.sports_relation]||'体育关系待确认')}</span></div></header>
+    <section class="context-section" aria-labelledby="scene-${e.id}"><h4 id="scene-${e.id}">发生情境</h4>
+    ${question('where','主要发生在哪里？')}
     ${d.where&&!MentorReference.where.includes(d.where)?select('where_basis','这个地点主要属于哪类生活场景？',pairs(MentorReference.where)):''}
-    <div class="field"><label>主要和谁有关？可多选</label><div class="chip-grid">${chips('who',true)}</div></div>
+    ${question('who','主要和谁有关？',true)}
     ${d.who.length>1?select('who_primary','其中对这件事最关键的是谁？',pairs(d.who)):''}
     ${primary&&!MentorReference.who.includes(primary)?select('who_tie_basis','这位关键人物与你的关系更接近哪一类？',pairs(MentorReference.who)):''}
-    <div class="field"><label>主要因为什么？</label><div class="chip-grid">${chips('why')}</div></div>
+    </section><section class="context-section" aria-labelledby="change-${e.id}"><h4 id="change-${e.id}">原因与变化</h4>
+    ${question('why','主要因为什么？')}
     ${d.why&&!referenceOptions.causes.includes(d.why)?select('why_basis','这个原因更接近哪一类？',pairs(referenceOptions.causes)):''}
-    <div class="field"><label>后来怎么样了？</label><div class="chip-grid">${chips('how')}</div></div>
+    ${question('how','后来怎么样了？')}
     ${resolution.source==='path_crossing_rule'?`<p class="hint">按博导原版规则，轨迹跨过中线后带入“${esc(resolution.how)}”。如不符合本意，请返回修改轨迹；之前的原答仍保留。</p>`:''}
     ${resolution.need_mid?`<div class="context-faders">${fader(e.id,'age_mid','明显转折大约发生在几岁？',resolution.age_mid,resolution.hi,'data-scale',resolution.lo)}${fader(e.id,'r_mid','转折时的影响有多强？',resolution.r_mid,1,'data-scale')}</div><p class="hint">${['path_crossing','original_crossing_sample'].includes(resolution.age_mid_source)?'年龄由跨轴轨迹点带入，可调整。':'请回忆这段轨迹中的明显转折年龄。'}${['path_crossing','original_crossing_sample'].includes(resolution.r_mid_source)?'影响由同一轨迹点带入，可调整。':''} 未操作的空项不会写入默认值。</p>`:''}
+    </section><section class="context-section context-section--ratings" aria-labelledby="feelings-${e.id}"><h4 id="feelings-${e.id}">主观感受</h4>
     ${interpersonal?`<div class="context-faders">${fader(e.id,'closeness',`与关键人物（${primary}）的亲近／信任程度`,LifeHistory.ratingValue(d,'closeness'),1,'data-scale')}</div>`:'<p class="hint">涉及多人时先选一位关键人物，再补充亲近／信任程度。</p>'}
     ${eventRatings(e)}
+    </section>
     ${training||competition?`<section class="sports-detail"><h4>这件经历的体育专项信息（选填）</h4><div class="context-faders">${training?fader(e.id,'autonomy','当时对训练安排的自主程度',LifeHistory.ratingValue(d,'autonomy'),1,'data-scale'):''}${fader(e.id,'fairness','当时对安排和机会的公平感',LifeHistory.ratingValue(d,'fairness'),1,'data-scale')}</div><div class="form-grid">${training?select('training_phase','当时主要处于哪个训练阶段？',[['start','开始训练'],['stable','持续训练'],['intensified','强化或备赛'],['pause','暂停训练'],['return','恢复训练'],['exit','退出训练'],['uncertain','说不清']]):''}${competition?select('competition_level','这件事涉及的比赛层级',levels)+select('competition_outcome','本次比赛或选拔的结果',[['awarded','获得名次、奖项或荣誉'],['not_awarded','参赛但未获奖'],['participation','以参与或选拔经历为主'],['uncertain','说不清']]):''}${competition&&(e.source_catalog_ids.includes('award')||d.competition_outcome==='awarded')?select('award_level','这次获奖的比赛层级',levels):''}${select('injury_related','这件事是否涉及运动伤病？',[[true,'是'],[false,'否']])}${d.injury_related===true?`<div class="field"><label for="days-${e.id}">因本次伤病完全停止训练的天数（0 表示未完全停训）</label><input id="days-${e.id}" type="number" min="0" max="${currentAge()*366}" step="1" data-detail-field="${e.id}|injury_stop_days" value="${esc(d.injury_stop_days??'')}"/></div>`:''}</div></section>`:''}
-    <p class="hint">未操作的评分保留为未作答；旧版来源不明的评分需重新操作确认，原值保留在原答中。不适用的专项字段在导出时单独标记。</p></article>`;
+    <footer class="detail-card-footer">未操作的评分保留为未作答，不适用的题目不会记为零。旧版来源不明的评分需重新确认，原值仍保留。</footer></article>`;
 }
 
 function fader(id, field, label, value, max, attribute, min=0) {
