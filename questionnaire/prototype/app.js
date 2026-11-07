@@ -106,8 +106,8 @@ function renderProfile() {
   stage.innerHTML = `
     <div class="stage-head">
       <div class="stage-kicker">第一步 · 背景</div>
-      <h2>无论有没有体育经历，都欢迎参加。</h2>
-      <p class="stage-lead">请回顾从小到现在的比赛和专项训练经历，包括已经停止的经历。体育专业、队伍身份与实际经历分别记录。</p>
+      <h2>年龄、年级与体育背景</h2>
+      <p class="stage-lead">有无体育经历均可参加。请回顾从小到现在的比赛和专项训练，包括已经停止的经历；专业、队伍身份与实际经历分别记录。</p>
     </div>
     <aside class="study-notice" aria-label="研究说明与数据边界">
       <div class="study-notice-title">这是交互原型，不是正式诊断问卷</div>
@@ -158,7 +158,7 @@ function renderEvents() {
     }).join('')}</section>`;
   };
   const specialistEvents = state.events.some(LifeHistory.isSpecialistEvent);
-  stage.innerHTML = `<div class="stage-head"><div class="stage-kicker">第二步 · 生活经历</div><h2>把生活与体育经历放在一起。</h2><p class="stage-lead">回顾从小到现在，记录实际发生且愿意分享的事情。没有比赛或专项训练经历，也可以记录家庭、学业、人际等一般生活经历。</p><p class="hint">按当时的感受选择好事或不好的事，不要求每类选满。不同清单指向同一件事时，只保留一件、多选领域标签；不同时间的两件事请分别记录。</p></div>
+  stage.innerHTML = `<div class="stage-head"><div class="stage-kicker">第二步 · 生活经历</div><h2>选择生活与体育经历</h2><p class="stage-lead">回顾从小到现在，记录实际发生且愿意分享的事情。没有比赛或专项训练经历，也可以记录家庭、学业、人际等一般生活经历。</p><p class="hint">按当时的感受选择好事或不好的事，不要求每类选满。不同清单指向同一件事时，只保留一件、多选领域标签；不同时间的两件事请分别记录。</p></div>
     <div class="view-filters" role="group" aria-label="事件清单范围">${[['all','全部清单'],['general','一般生活'],['sports','体育专项']].map(([key,label])=>`<button type="button" class="choice ${catalogScope===key?'is-selected':''}" data-catalog-scope="${key}" aria-pressed="${catalogScope===key}">${label}</button>`).join('')}</div>
     ${catalogScope !== 'sports' ? moduleHTML('general','一般生活事件','各领域已全部展开，请选择实际发生且愿意记录的事。同类事件发生多次时，可在已选列表中再次添加。') : ''}
     ${catalogScope !== 'general' ? (eligible ? moduleHTML('sports','体育专项事件','有比赛或专项训练经历时补充。已在一般生活中记过的同一件事，无需重复选择。') : '<p class="notice">背景中没有比赛和专项训练经历，体育专项清单暂不开放。体育课或日常运动经历仍可在一般生活中记录，并标注与体育的关系。</p>') : ''}
@@ -223,7 +223,7 @@ function renderTrajectories() {
   const trained=state.tutor?.success&&state.tutor.version===LifeTreeTutor.VERSION;
   document.body.classList.toggle('is-practicing',!trained||replayDrawingTutorial);
   if(!trained||replayDrawingTutorial){
-    stage.innerHTML=`<div class="practice-layout"><div class="practice-copy"><div class="stage-kicker">第三步 · 画线练习</div><h2>先试一笔，再画自己的经历。</h2><p class="stage-lead">假设一件不好的事，当时影响中等，后来变大，现在变小。看看如何用一根线记录这个过程。</p><ol class="practice-rules"><li>先看绿色示范线，再点击画板进入练习。</li><li>按住鼠标或手指，从下往上一笔连接：中 → 大 → 小。</li><li>越远离树干，影响越大；练习通过后开始画自己的树。</li></ol><p class="hint">这只是虚构示例，不会加入你的生活经历。</p><details class="keyboard-help"><summary>使用键盘练习</summary><p>按 Tab 聚焦画板。空格进入练习，再按空格落笔；方向键移动，Shift＋方向键微调，回车结束，Esc 清除当前一笔。</p></details><button type="button" class="ghost-button practice-back" id="practiceBack">${trained?'返回自己的生命树':'返回修改经历'}</button></div><div id="mentorTutor" class="mentor-tree-host practice-board-host"></div></div>`;
+    stage.innerHTML=`<div class="practice-layout"><div class="practice-copy"><div class="stage-kicker">第三步 · 画线练习</div><h2>练习画一段经历</h2><p class="stage-lead">假设一件不好的事，当时影响中等，后来变大，现在变小。看看如何用一根线记录这个过程。</p><ol class="practice-rules"><li>先看绿色示范线，再点击画板进入练习。</li><li>按住鼠标或手指，从下往上一笔连接：中 → 大 → 小。</li><li>越远离树干，影响越大；练习通过后开始画自己的树。</li></ol><p class="hint">这只是虚构示例，不会加入你的生活经历。</p><details class="keyboard-help"><summary>使用键盘练习</summary><p>按 Tab 聚焦画板。空格进入练习，再按空格落笔；方向键移动，Shift＋方向键微调，回车结束，Esc 清除当前一笔。</p></details><button type="button" class="ghost-button practice-back" id="practiceBack">${trained?'返回自己的生命树':'返回修改经历'}</button></div><div id="mentorTutor" class="mentor-tree-host practice-board-host"></div></div>`;
     document.getElementById('practiceBack').addEventListener('click',()=>{LifeTreeTutor.dispose();replayDrawingTutorial=false;if(trained)renderTrajectories();else{state.step=1;render();}});
     LifeTreeTutor.render({host:document.getElementById('mentorTutor'),onProgress:data=>{
       const index=state.tutor_sessions.findIndex(row=>row.session_id===data.session_id);
@@ -241,7 +241,7 @@ function renderTrajectories() {
 
 function renderDetails() {
   if(!state.events.length){stage.innerHTML='<h2>没有事件需要补充。</h2>';return;}
-  stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第四步 · 情境</div><h2>一件经历，一张情境卡片。</h2><p class="stage-lead">按卡片顺序，补充每件经历的地点、人物和后续变化。训练、比赛、伤病等专项问题，只在适用的卡片中出现。</p></div><nav class="detail-navigator" aria-label="跳转到事件卡片"><div class="detail-navigator-heading"><strong>${state.events.length} 张事件卡片</strong><span>点击名称，快速定位</span></div><div class="detail-jump-list">${state.events.map((e,i)=>`<a class="detail-jump detail-jump--${e.valence>0?'pos':'neg'}" href="#detail-${e.id}" title="${esc(e.label)}"><span>${String(i+1).padStart(2,'0')}</span><span>${esc(e.label)}</span></a>`).join('')}</div></nav><div class="detail-list">${state.events.map(detailCard).join('')}</div>`;
+  stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第四步 · 情境</div><h2>补充每件经历的情境</h2><p class="stage-lead">按卡片顺序，补充每件经历的地点、人物和后续变化。训练、比赛、伤病等专项问题，只在适用的卡片中出现。</p></div><nav class="detail-navigator" aria-label="跳转到事件卡片"><div class="detail-navigator-heading"><strong>${state.events.length} 张事件卡片</strong><span>点击名称，快速定位</span></div><div class="detail-jump-list">${state.events.map((e,i)=>`<a class="detail-jump detail-jump--${e.valence>0?'pos':'neg'}" href="#detail-${e.id}" title="${esc(e.label)}"><span>${String(i+1).padStart(2,'0')}</span><span>${esc(e.label)}</span></a>`).join('')}</div></nav><div class="detail-list">${state.events.map(detailCard).join('')}</div>`;
   stage.querySelectorAll('[data-chip]').forEach(btn=>btn.addEventListener('click',()=>{
     const [id,field,value]=btn.dataset.chip.split('|'),d=detailsFor(id);
     const previous=EventMapping.derive(eventById(id),d,currentAge()).sources.who_primary;
@@ -382,7 +382,7 @@ function buildPayload() {
 function renderReview() {
   const payload=buildPayload();
   const showTree=state.events.some(e=>LifeTree.isComplete(e,currentAge()));
-  stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第五步 · 检查</div><h2>生活与体育，在同一条时间线上。</h2><p class="stage-lead">记录只保存在当前浏览器，可下载 JSON。这里的轨迹是回顾性自评，不表示因果关系。</p></div>
+  stage.innerHTML=`<div class="stage-head"><div class="stage-kicker">第五步 · 检查</div><h2>检查生命树与回答</h2><p class="stage-lead">记录只保存在当前浏览器，可下载 JSON。这里的轨迹是回顾性自评，不表示因果关系。</p></div>
     <div class="review-grid"><div class="review-stat"><strong>${state.events.length}</strong><span>去重后的事件数</span></div><div class="review-stat"><strong>${payload.process.n_non_sports} / ${payload.process.n_sports_related}</strong><span>一般生活（非体育）／体育相关</span></div><div class="review-stat"><strong>${state.events[0]?'已记录':'无事件'}</strong><span>首次回忆顺序另行保留</span></div></div>
     ${payload.process.n_unclassified?`<p class="notice">${payload.process.n_unclassified} 件经历的体育关系为说不清或未确认，只显示在“全部”中，不归入无体育事件。</p>`:''}
     <div class="notice">正式心理韧性、焦虑、抑郁量表仍待接入；所有学生将完成相同量表。本页不是正式调查完成页。</div>
